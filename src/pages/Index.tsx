@@ -76,7 +76,7 @@ const Index = () => {
               <Mail size={16} /> Email
             </a>
           </div>
-          <p className="text-[10px] text-muted-foreground/50 pt-4 text-center">Website designed and developed by Dalbert Joe</p>
+          <p className="text-[10px] text-muted-foreground/50 pt-4 text-center">Designed by Dalbert Joe</p>
         </div>
       </Modal>
 
