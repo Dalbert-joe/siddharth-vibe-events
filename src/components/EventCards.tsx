@@ -55,6 +55,7 @@ const ContactPanel = ({ onClose }: { onClose: () => void }) => (
 
 const EventCards = () => {
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [flipped, setFlipped] = useState<number | null>(null);
   const [contactOpen, setContactOpen] = useState<number | null>(null);
 
   return (
@@ -70,6 +71,7 @@ const EventCards = () => {
               className={`transition-all duration-500 ${expanded !== null && expanded !== i ? "opacity-40 scale-95" : "opacity-100"}`}
             >
               {expanded === i ? (
+                /* Expanded detail panel */
                 <div className="bg-card border gold-border rounded-lg p-8 gold-glow animate-fade-in">
                   <div className="flex justify-between items-start mb-4">
                     <h3 className="font-heading text-2xl gold-text">{event.title}</h3>
@@ -107,22 +109,27 @@ const EventCards = () => {
                   {contactOpen === i && <ContactPanel onClose={() => setContactOpen(null)} />}
                 </div>
               ) : (
+                /* 3D Flip Card */
                 <div
-                  className="bg-card border gold-border rounded-lg p-6 gold-glow hover:gold-glow-hover gold-border-hover transition-all duration-300 hover:-translate-y-1 cursor-none"
-                  onClick={() => setExpanded(i)}
+                  className="perspective-1000 h-48 cursor-none"
+                  onMouseEnter={() => setFlipped(i)}
+                  onMouseLeave={() => setFlipped(null)}
+                  onClick={() => { setExpanded(i); setFlipped(null); }}
                 >
-                  <h3 className="font-heading text-xl gold-text mb-3">{event.title}</h3>
-                  <p className="text-muted-foreground font-body text-sm leading-relaxed mb-5 line-clamp-2">{event.description}</p>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setExpanded(i);
-                      setContactOpen(i);
-                    }}
-                    className="px-5 py-2.5 bg-primary text-primary-foreground font-body text-sm font-medium rounded hover:opacity-90 transition-opacity cursor-none"
+                  <div
+                    className={`relative w-full h-full transition-transform duration-700 preserve-3d ${flipped === i ? "rotate-y-180" : ""}`}
                   >
-                    Contact Us
-                  </button>
+                    {/* Front — Event title */}
+                    <div className="absolute inset-0 backface-hidden bg-card border gold-border rounded-lg flex items-center justify-center gold-glow gold-glow-hover gold-border-hover transition-all duration-300">
+                      <h3 className="font-heading text-xl sm:text-2xl gold-text text-center px-4">{event.title}</h3>
+                    </div>
+                    {/* Back — Short description */}
+                    <div className="absolute inset-0 backface-hidden rotate-y-180 bg-card border gold-border rounded-lg flex items-center justify-center p-6 gold-glow">
+                      <p className="text-secondary-foreground font-body text-sm text-center leading-relaxed">
+                        {event.description}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
