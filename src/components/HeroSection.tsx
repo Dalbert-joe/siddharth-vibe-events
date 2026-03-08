@@ -18,7 +18,7 @@ const HeroSection = () => {
         <p className="mt-6 text-lg sm:text-xl font-body gold-text-light tracking-widest uppercase opacity-80">
           Premium Event Management Since 1991
         </p>
-        <div className="mt-2 text-sm font-body text-muted-foreground tracking-wider">Madurai, Tamil Nadu</div>
+        
       </div>
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-float">
         <div className="w-6 h-10 rounded-full border-2 gold-border flex items-start justify-center pt-2">
