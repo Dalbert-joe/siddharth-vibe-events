@@ -1,142 +1,167 @@
 import { useState } from "react";
-import { X, Mail, MapPin, Instagram } from "lucide-react";
+import { X } from "lucide-react";
 
-interface EventCard {
+interface EventCategory {
   title: string;
   description: string;
+  services: string[];
 }
 
-const events: EventCard[] = [
-  { title: "Temple Functions", description: "Traditional temple ceremonies conducted with cultural authenticity and traditional arrangements." },
-  { title: "Andal Kalyanam", description: "Sacred Andal Kalyanam event planning with traditional decor and ceremonial coordination." },
-  { title: "Catering Services", description: "Professional catering for weddings, religious ceremonies, and large-scale gatherings." },
-  { title: "Cultural Folk Programs", description: "Authentic Tamil folk dance and cultural performances for festivals and public events." },
-  { title: "Temple Festival Events", description: "Event arrangements for temple festivals including stage, sound, and public coordination." },
-  { title: "Birthday Celebrations", description: "Customized birthday party arrangements and entertainment planning." },
-  { title: "Public Cultural Festivals", description: "Large-scale festival event management with stage, lighting, and performance coordination." },
-  { title: "Inflatable Costume Rental", description: "Export-quality inflatable character costumes available for rental or purchase." },
-  { title: "Stage and Sound Setup", description: "Professional stage structures, lighting rigs, and sound systems for large gatherings." },
+const eventCategories: EventCategory[] = [
+  {
+    title: "Temple Processions (Sammy Oorvalam)",
+    description: "Traditional temple procession performances and devotional ceremonial entries for festivals and weddings.",
+    services: ["Madurai Famous Kallalagar Oorvalam", "Amman Oorvalam"],
+  },
+  {
+    title: "Welcome & Wedding Entry Performances",
+    description: "Elegant welcome dances and grand wedding stage entry performances for memorable celebrations.",
+    services: ["Layer Skirt Lotus Welcome Dance", "Welcome Girls Dance Team", "Wedding Stage Welcome Dance Performance"],
+  },
+  {
+    title: "Event Food Stalls",
+    description: "Curated food and beverage stall setups for events, weddings, and festivals.",
+    services: ["Popcorn Stall", "Ice Cream Stall", "Panjumittai (Cotton Candy) Stall", "Beeda Stall", "Mehendi Stall", "Tea / Coffee / Badam Milk Stall"],
+  },
+  {
+    title: "Fun Character & Welcome Costumes",
+    description: "Entertaining character costumes for event welcomes and kids' entertainment.",
+    services: ["Mickey Mouse Costume (Pair)", "Teddy Costume (Pair)", "Chettiar Costume (Pair)", "Joker Costume", "Chettiar Solo Costume", "Chotta Bheem Costume", "Fat Man Costume"],
+  },
+  {
+    title: "Musical Instrument Performances",
+    description: "Live traditional and contemporary musical instrument performances for all occasions.",
+    services: ["Kerala Special Chenda Melam", "Drum Set Performance", "Nadaswaram", "Thappattam"],
+  },
+  {
+    title: "Traditional Tamil Folk Dances (கிராமிய நிகழ்ச்சிகள்)",
+    description: "Authentic Tamil folk dance performances rooted in cultural heritage and tradition.",
+    services: ["Madu Attam", "Mayil Attam", "Poyikkal Kuthirai Attam", "Kattai Kal Attam (Kokkalikattai Attam)", "Oyilattam", "Karakattam", "Pulli Attam", "Karadi Attam"],
+  },
+  {
+    title: "Entertainment Shows",
+    description: "Variety entertainment programs including music, devotional performances, and magic.",
+    services: ["Variety Show (ஆடல் பாடல் நிகழ்ச்சி)", "Devotional Shows (பக்தி நிகழ்ச்சிகள்)", "Magic Show"],
+  },
+  {
+    title: "Music & Party",
+    description: "Professional DJ and party music setups for events and celebrations.",
+    services: ["DJ Set"],
+  },
+  {
+    title: "Event Core Services",
+    description: "Essential event management services including catering, venue setup, and stage design.",
+    services: ["Catering Services", "Marriage Hall Arrangements", "Stage Decorations"],
+  },
+  {
+    title: "Sammy Attam Costumes (8 Feet Traditional Costumes)",
+    description: "Towering 8-feet traditional deity and character costumes for grand ceremonial performances.",
+    services: ["Karuppasamy Costume", "Different Kalli Costume (Fiber Quality)", "Hanuman Costume", "Varagi Amman Costume", "Narasimha Costume", "Vinayagar Costume", "Tirupati Wedding Entry Costume", "Kantara Costume"],
+  },
+  {
+    title: "Kerala Famous Theyyam Dance",
+    description: "13 types of Theyyam available with customization for weddings, festivals, and themed events.",
+    services: ["Different Types of Gods", "Political Party Themes", "Kantara Theyyam", "Wedding and Festival Performances"],
+  },
+  {
+    title: "Special Trending Entry Collections",
+    description: "Trending and viral grand entry styles for weddings and events.",
+    services: ["Realistic Elephant Entry", "Golden Pallakku (Bridal Entry)", "Mascot Costumes", "Madurai Kallalagar Oorvalam", "Amman Oorvalam", "Tirupati Wedding Entry Costume", "Realistic Robot Entry", "Chinese Dancing Lion"],
+  },
+  {
+    title: "Mascot Costumes (6–12 Feet)",
+    description: "Large-scale mascot costumes available in various characters for events and promotions.",
+    services: ["Gorilla", "Panda", "Rabbit", "Polar Bear", "Duck", "Hulk", "Rooster", "Blue Monster", "Chinese Dragon", "Teddy", "Grey Monster", "Wolf", "Dinosaur", "Cat"],
+  },
+  {
+    title: "Kids & Adult Mascot Costumes (6 Feet)",
+    description: "Fun-sized mascot costumes suitable for kids and adults at parties and events.",
+    services: ["Dinosaur", "Dragon", "Horse", "Duck", "Alien", "Joker", "Rooster"],
+  },
+  {
+    title: "Additional Event Collections",
+    description: "Specialized event add-ons including lighting, effects, and accessories.",
+    services: ["Lighting Umbrella", "Devotional Umbrella", "Political Party Umbrella", "Colourful Paper Shots", "Colourful Kavadi Attam", "Devotional Makeup Artists (School and College Events)", "Devotional Costumes, Accessories and Jewelry", "Mic Set / Sound System", "Smoke Entry Effects", "360 Camera Booth", "Horse Chariot", "Fire Entry Effects"],
+  },
 ];
 
-const INSTAGRAM_URL = "https://www.instagram.com/siddharth_vibe_events?igsh=aTExYmU5ZWc5NjBt";
-
-const ContactPanel = ({ onClose }: { onClose: () => void }) => (
-  <div className="mt-6 p-5 bg-secondary rounded-lg border gold-border animate-fade-in">
-    <div className="flex justify-between items-center mb-4">
-      <span className="font-heading text-sm gold-text uppercase tracking-wider">Contact Us</span>
-      <button onClick={onClose} className="gold-text opacity-60 hover:opacity-100 transition-opacity cursor-none">
-        <X size={16} />
-      </button>
-    </div>
-    <div className="space-y-3 text-sm font-body">
-      <div className="flex items-start gap-3">
-        <MapPin size={16} className="gold-text mt-0.5 shrink-0" />
-        <p className="text-secondary-foreground leading-relaxed">
-          28, Nelmandi Mahal Sanathi Street<br />
-          Thiruparankundram, Madurai<br />
-          Tamil Nadu 625005, India
-        </p>
-      </div>
-      <div className="flex items-center gap-3">
-        <Mail size={16} className="gold-text shrink-0" />
-        <a href="mailto:siddharthvibe.events@gmail.com" className="text-secondary-foreground hover:text-primary transition-colors cursor-none">
-          siddharthvibe.events@gmail.com
-        </a>
-      </div>
-      <div className="flex items-center gap-3">
-        <Instagram size={16} className="gold-text shrink-0" />
-        <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="text-secondary-foreground hover:text-primary transition-colors cursor-none">
-          @siddharth_vibe_events
-        </a>
-      </div>
-    </div>
-  </div>
-);
-
 const EventCards = () => {
-  const [expanded, setExpanded] = useState<number | null>(null);
   const [flipped, setFlipped] = useState<number | null>(null);
-  const [contactOpen, setContactOpen] = useState<number | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventCategory | null>(null);
 
   return (
-    <section id="events" className="py-24 px-6">
-      <div className="max-w-6xl mx-auto">
-        <h2 className="font-heading text-4xl sm:text-5xl text-center gold-text mb-4">Our Services</h2>
-        <p className="text-center text-muted-foreground mb-16 font-body">End-to-end event solutions since 1991</p>
+    <>
+      <section id="events" className="py-24 px-6">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="font-heading text-4xl sm:text-5xl text-center gold-text mb-4">Our Services</h2>
+          <p className="text-center text-muted-foreground mb-16 font-body">End-to-end event solutions since 1991</p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative">
-          {events.map((event, i) => (
-            <div
-              key={i}
-              className={`transition-all duration-500 ${expanded !== null && expanded !== i ? "opacity-40 scale-95" : "opacity-100"}`}
-            >
-              {expanded === i ? (
-                /* Expanded detail panel */
-                <div className="bg-card border gold-border rounded-lg p-8 gold-glow animate-fade-in">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="font-heading text-2xl gold-text">{event.title}</h3>
-                    <button
-                      onClick={() => { setExpanded(null); setContactOpen(null); }}
-                      className="gold-text opacity-60 hover:opacity-100 transition-opacity cursor-none"
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-                  <p className="text-secondary-foreground font-body leading-relaxed mb-6">{event.description}</p>
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    {[1, 2, 3, 4].map((n) => (
-                      <div key={n} className="aspect-video bg-secondary rounded flex items-center justify-center">
-                        <span className="text-muted-foreground text-xs font-body">Gallery {n}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setContactOpen(contactOpen === i ? null : i); }}
-                      className="px-6 py-3 bg-primary text-primary-foreground font-body font-medium rounded hover:opacity-90 transition-opacity cursor-none"
-                    >
-                      Contact Us
-                    </button>
-                    <a
-                      href={INSTAGRAM_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-3 bg-secondary text-secondary-foreground font-body font-medium rounded hover:bg-muted transition-colors cursor-none"
-                    >
-                      <Instagram size={16} /> Instagram
-                    </a>
-                  </div>
-                  {contactOpen === i && <ContactPanel onClose={() => setContactOpen(null)} />}
-                </div>
-              ) : (
-                /* 3D Flip Card */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {eventCategories.map((event, i) => (
+              <div
+                key={i}
+                className="perspective-1000 h-48 cursor-none"
+                onMouseEnter={() => setFlipped(i)}
+                onMouseLeave={() => setFlipped(null)}
+                onClick={() => { setSelectedEvent(event); setFlipped(null); }}
+              >
                 <div
-                  className="perspective-1000 h-48 cursor-none"
-                  onMouseEnter={() => setFlipped(i)}
-                  onMouseLeave={() => setFlipped(null)}
-                  onClick={() => { setExpanded(i); setFlipped(null); }}
+                  className={`relative w-full h-full transition-transform duration-700 preserve-3d ${flipped === i ? "rotate-y-180" : ""}`}
                 >
-                  <div
-                    className={`relative w-full h-full transition-transform duration-700 preserve-3d ${flipped === i ? "rotate-y-180" : ""}`}
-                  >
-                    {/* Front — Event title */}
-                    <div className="absolute inset-0 backface-hidden bg-card border gold-border rounded-lg flex items-center justify-center gold-glow gold-glow-hover gold-border-hover transition-all duration-300">
-                      <h3 className="font-heading text-xl sm:text-2xl gold-text text-center px-4">{event.title}</h3>
-                    </div>
-                    {/* Back — Short description */}
-                    <div className="absolute inset-0 backface-hidden rotate-y-180 bg-card border gold-border rounded-lg flex items-center justify-center p-6 gold-glow">
-                      <p className="text-secondary-foreground font-body text-sm text-center leading-relaxed">
-                        {event.description}
-                      </p>
-                    </div>
+                  {/* Front */}
+                  <div className="absolute inset-0 backface-hidden bg-card border gold-border rounded-lg flex items-center justify-center gold-glow gold-glow-hover gold-border-hover transition-all duration-300 p-4">
+                    <h3 className="font-heading text-lg sm:text-xl gold-text text-center leading-snug">{event.title}</h3>
+                  </div>
+                  {/* Back */}
+                  <div className="absolute inset-0 backface-hidden rotate-y-180 bg-card border gold-border rounded-lg flex items-center justify-center p-6 gold-glow">
+                    <p className="text-secondary-foreground font-body text-sm text-center leading-relaxed">{event.description}</p>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* Full-screen modal */}
+      {selectedEvent && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          onClick={() => setSelectedEvent(null)}
+        >
+          <div className="absolute inset-0 bg-background/85 backdrop-blur-sm animate-fade-in" />
+          <div
+            className="relative z-10 w-full max-w-2xl max-h-[85vh] bg-card border gold-border rounded-lg gold-glow animate-fade-in flex flex-col"
+            style={{ animationDuration: "0.35s" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex justify-between items-start p-8 pb-4 shrink-0">
+              <h3 className="font-heading text-2xl sm:text-3xl gold-text leading-snug pr-4">{selectedEvent.title}</h3>
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className="gold-text opacity-60 hover:opacity-100 transition-opacity cursor-none mt-1 shrink-0"
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            {/* Scrollable content */}
+            <div className="overflow-y-auto px-8 pb-8 flex-1 min-h-0">
+              <p className="text-muted-foreground font-body text-sm mb-6 leading-relaxed">{selectedEvent.description}</p>
+              <ul className="space-y-3">
+                {selectedEvent.services.map((service, idx) => (
+                  <li key={idx} className="flex items-start gap-3 font-body text-sm text-secondary-foreground">
+                    <span className="gold-text mt-1 shrink-0 text-xs">◆</span>
+                    <span>{service}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
