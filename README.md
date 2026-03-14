@@ -1,73 +1,127 @@
-# Welcome to your Lovable project
+# Siddharth Vibe Events Website
 
-## Project info
+Official website for **Siddharth Vibe Events**, an event management service based in Madurai, Tamil Nadu.
+The website showcases event services, cultural performances, rental offerings, and provides direct contact options for bookings.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## Live Website
 
-There are several ways of editing your application.
+Production deployment:
 
-**Use Lovable**
+https://siddharth-vibe-events.vercel.app
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## Features
 
-**Use your preferred IDE**
+* Event service showcase
+* Interactive service cards with detailed modal view
+* WhatsApp direct contact integration
+* Email contact option
+* Instagram redirect integration
+* Responsive design (mobile, tablet, desktop)
+* Smooth UI animations
+* Fast static deployment
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+---
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Event Services Covered
 
-Follow these steps:
+The platform highlights multiple event categories including:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+* Temple Processions
+* Wedding Entry Performances
+* Tamil Folk Dance Programs
+* Entertainment Shows
+* Musical Instrument Performances
+* Event Food Stalls
+* Mascot Costumes
+* Traditional Costume Performances
+* Wedding Entry Concepts
+* Event Core Services
+* Lighting and Stage Effects
+* Kids Entertainment Activities
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Technology Stack
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+This project is built using modern frontend technologies:
+
+* React
+* TypeScript
+* Vite
+* Tailwind CSS
+* shadcn/ui
+* Lucide Icons
+
+---
+
+## Local Development
+
+### Prerequisites
+
+* Node.js (v18 or later)
+* npm
+
+### Clone Repository
+
+```bash
+git clone https://github.com/Dalbert-joe/siddharth-vibe-events.git
+```
+
+### Navigate to Project Folder
+
+```bash
+cd siddharth-vibe-events
+```
+
+### Install Dependencies
+
+```bash
+npm install
+```
+
+### Run Development Server
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The project will run locally at:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+http://localhost:5173
+```
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Deployment
 
-## What technologies are used for this project?
+The website is deployed using **Vercel**.
 
-This project is built with:
+Every push to the `main` branch automatically triggers a new production deployment.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## Contact
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+**Siddharth Vibe Events**
+Madurai, Tamil Nadu, India
 
-## Can I connect a custom domain to my Lovable project?
+Email
+[siddharthvibe.events@gmail.com](mailto:siddharthvibe.events@gmail.com)
 
-Yes, you can!
+Instagram
+https://www.instagram.com/siddharth_vibe_events
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+WhatsApp
++91 63806 90032
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+---
+
+## License
+
+This repository contains the official website for Siddharth Vibe Events.
+Unauthorized commercial reuse is not permitted.
