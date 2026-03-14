@@ -1,9 +1,0 @@
-{
-  "redirects": [
-    {
-      "source": "https://siddharthevents.in/",
-      "destination": "https://siddharth-vibe-events.vercel.app/$1",
-      "permanent": true
-    }
-  ]
-}
