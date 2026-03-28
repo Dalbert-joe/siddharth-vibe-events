@@ -12,13 +12,14 @@ interface AuthContextType {
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  login: () => null,
+  signup: () => null,
+  logout: () => {},
+});
 
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
-};
+export const useAuth = () => useContext(AuthContext);
 
 interface StoredUser {
   name: string;
