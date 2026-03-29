@@ -8,7 +8,7 @@ interface NavigationProps {
 }
 
 const Navigation = ({ onOpenAbout, onOpenSupport, onOpenFeedback }: NavigationProps) => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
 
   const scrollTo = (id: string) => {
@@ -35,9 +35,9 @@ const Navigation = ({ onOpenAbout, onOpenSupport, onOpenFeedback }: NavigationPr
             </button>
           ))}
 
-          {user ? (
+          {!loading && (user ? (
             <button
-              onClick={logout}
+              onClick={() => logout()}
               className="ml-2 px-4 py-1.5 border gold-border rounded text-xs uppercase tracking-wider gold-text hover:bg-primary hover:text-primary-foreground transition-all cursor-none"
             >
               Logout
@@ -49,7 +49,7 @@ const Navigation = ({ onOpenAbout, onOpenSupport, onOpenFeedback }: NavigationPr
             >
               Login
             </button>
-          )}
+          ))}
         </div>
       </div>
     </nav>
