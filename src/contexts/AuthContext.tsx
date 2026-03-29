@@ -1,14 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import {
-  onAuthStateChanged,
-  sendSignInLinkToEmail,
-  isSignInWithEmailLink,
-  signInWithEmailLink,
-  signOut,
-  User as FirebaseUser,
-} from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { supabase } from "@/integrations/supabase/client";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface UserProfile {
   name: string;
@@ -18,18 +10,12 @@ interface UserProfile {
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
-  sendLoginLink: (email: string) => Promise<string | null>;
-  sendSignupLink: (name: string, email: string) => Promise<string | null>;
+  sendOtp: (email: string) => Promise<string | null>;
+  verifyOtp: (email: string, token: string) => Promise<string | null>;
   logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-  sendLoginLink: async () => null,
-  sendSignupLink: async () => null,
-  logout: async () => {},
-});
+const AuthContext = createContext<AuthContextType | null>(null);
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
@@ -37,96 +23,59 @@ export const useAuth = () => {
   return ctx;
 };
 
-const actionCodeSettings = {
-  url: window.location.origin + "/login",
-  handleCodeInApp: true,
-};
-
-async function fetchProfile(fbUser: FirebaseUser): Promise<UserProfile | null> {
-  const snap = await getDoc(doc(db, "users", fbUser.uid));
-  if (snap.exists()) {
-    const data = snap.data();
-    return { name: data.name || "", email: fbUser.email || "" };
-  }
-  return { name: "", email: fbUser.email || "" };
-}
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Handle email-link sign-in on page load
   useEffect(() => {
-    if (isSignInWithEmailLink(auth, window.location.href)) {
-      let email = localStorage.getItem("emailForSignIn");
-      if (!email) {
-        email = window.prompt("Please provide your email for confirmation") || "";
-      }
-      if (email) {
-        signInWithEmailLink(auth, email, window.location.href)
-          .then(async (result) => {
-            localStorage.removeItem("emailForSignIn");
-            const pendingName = localStorage.getItem("pendingSignupName") || "";
-            if (pendingName) {
-              await setDoc(doc(db, "users", result.user.uid), {
-                name: pendingName,
-                email: result.user.email,
-                createdAt: new Date().toISOString(),
-              });
-              localStorage.removeItem("pendingSignupName");
-            }
-            // Clean URL
-            window.history.replaceState(null, "", window.location.origin + "/");
-          })
-          .catch((err) => {
-            console.error("Email link sign-in error:", err);
-          });
-      }
-    }
-  }, []);
-
-  // Listen for auth state changes
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (fbUser) => {
-      if (fbUser) {
-        const profile = await fetchProfile(fbUser);
-        setUser(profile);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({
+          name: session.user.user_metadata?.name || "",
+          email: session.user.email || "",
+        });
       } else {
         setUser(null);
       }
       setLoading(false);
     });
-    return unsub;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser({
+          name: session.user.user_metadata?.name || "",
+          email: session.user.email || "",
+        });
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const sendLoginLink = async (email: string): Promise<string | null> => {
-    try {
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      localStorage.setItem("emailForSignIn", email);
-      return null;
-    } catch (err: any) {
-      return err.message || "Failed to send login link";
-    }
+  const sendOtp = async (email: string): Promise<string | null> => {
+    const { error } = await supabase.auth.signInWithOtp({ email });
+    if (error) return error.message;
+    return null;
   };
 
-  const sendSignupLink = async (name: string, email: string): Promise<string | null> => {
-    try {
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      localStorage.setItem("emailForSignIn", email);
-      localStorage.setItem("pendingSignupName", name);
-      return null;
-    } catch (err: any) {
-      return err.message || "Failed to send signup link";
-    }
+  const verifyOtp = async (email: string, token: string): Promise<string | null> => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: "email",
+    });
+    if (error) return error.message;
+    return null;
   };
 
   const logout = async () => {
-    await signOut(auth);
+    await supabase.auth.signOut();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, sendLoginLink, sendSignupLink, logout }}>
+    <AuthContext.Provider value={{ user, loading, sendOtp, verifyOtp, logout }}>
       {children}
     </AuthContext.Provider>
   );
