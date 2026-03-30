@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import VerifyOtp from "./pages/VerifyOtp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
