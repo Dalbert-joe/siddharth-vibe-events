@@ -35,7 +35,7 @@ const Login = () => {
     setSending(true);
     const err = await sendOtp(email.trim());
     setSending(false);
-    if (err) { setError(err); } else { setStep("otp"); setCooldown(RESEND_COOLDOWN); }
+    if (err) { setError(err); } else { navigate("/verify-otp", { state: { email: email.trim(), flow: "login" } }); }
   };
 
   const handleOtpChange = (index: number, value: string) => {
