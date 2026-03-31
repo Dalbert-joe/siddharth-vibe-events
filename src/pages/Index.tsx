@@ -27,9 +27,7 @@ const Index = () => {
   const [feedbackPhone, setFeedbackPhone] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackLoading, setFeedbackLoading] = useState(false);
-  const [feedbackStatus, setFeedbackStatus] = useState
-    "idle" | "success" | "error"
-  >("idle");
+  const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "success" | "error">("idle");
 
   const handleOpenFeedback = () => {
     if (!user) {
@@ -88,7 +86,6 @@ const Index = () => {
       <GallerySection />
       <Footer />
 
-      {/* About Modal */}
       <Modal open={aboutOpen} onClose={() => setAboutOpen(false)} title="About Us">
         <div className="space-y-4 text-secondary-foreground font-body text-sm leading-relaxed">
           <p>Since 1991, Siddharth Vibe Events has been a cornerstone of comprehensive event management in Tamil Nadu.</p>
@@ -98,7 +95,6 @@ const Index = () => {
         </div>
       </Modal>
 
-      {/* Support Modal */}
       <Modal open={supportOpen} onClose={() => setSupportOpen(false)} title="Contact & Support">
         <div className="space-y-5 font-body text-sm">
           <div className="flex items-start gap-3">
@@ -125,13 +121,15 @@ const Index = () => {
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 bg-secondary rounded font-medium text-secondary-foreground hover:bg-muted transition-colors cursor-none"
             >
-              <Instagram size={16} /> Instagram
+              <Instagram size={16} />
+              Instagram
             </a>
             
               href="mailto:siddharthvibe.events@gmail.com"
               className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded font-medium hover:opacity-90 transition-opacity cursor-none"
             >
-              <Mail size={16} /> Email
+              <Mail size={16} />
+              Email
             </a>
           </div>
           <p className="text-[10px] text-muted-foreground/50 pt-4 text-center">
@@ -140,10 +138,12 @@ const Index = () => {
         </div>
       </Modal>
 
-      {/* Feedback Modal */}
       <Modal
         open={feedbackOpen}
-        onClose={() => { setFeedbackOpen(false); setFeedbackStatus("idle"); }}
+        onClose={() => {
+          setFeedbackOpen(false);
+          setFeedbackStatus("idle");
+        }}
         title="Feedback"
       >
         {feedbackStatus === "success" ? (
@@ -154,7 +154,10 @@ const Index = () => {
               Your feedback has been received.
             </p>
             <button
-              onClick={() => { setFeedbackStatus("idle"); setFeedbackOpen(false); }}
+              onClick={() => {
+                setFeedbackStatus("idle");
+                setFeedbackOpen(false);
+              }}
               className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded text-sm font-body hover:opacity-90 cursor-none"
             >
               Close
