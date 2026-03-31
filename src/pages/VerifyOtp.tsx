@@ -1,176 +1,156 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-
-const RESEND_COOLDOWN = 30;
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { ShieldCheck } from "lucide-react";
 
 const VerifyOtp = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { sendOtp } = useAuth();
-  const email = (location.state as { email?: string; name?: string; flow?: string })?.email || "";
-  const name = (location.state as { name?: string })?.name || "";
-  const flow = (location.state as { flow?: string })?.flow || "login";
+  const location = useLocation();
+  const email = (location.state as { email?: string })?.email || "";
 
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [sending, setSending] = useState(false);
-  const [cooldown, setCooldown] = useState(RESEND_COOLDOWN);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [resendCooldown, setResendCooldown] = useState(60);
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    if (!email) {
-      navigate("/login", { replace: true });
-    }
-  }, [email, navigate]);
-
-  useEffect(() => {
-    inputRefs.current[0]?.focus();
+    if (!email) navigate("/signup");
+    inputsRef.current[0]?.focus();
   }, []);
 
   useEffect(() => {
-    if (cooldown <= 0) return;
-    const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
-  }, [cooldown]);
+  }, [resendCooldown]);
 
-  const handleOtpChange = (index: number, value: string) => {
+  const handleChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
     const newOtp = [...otp];
     newOtp[index] = value.slice(-1);
     setOtp(newOtp);
-
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-
-    const fullOtp = newOtp.join("");
-    if (fullOtp.length === 6) {
-      handleVerify(fullOtp);
-    }
+    if (value && index < 5) inputsRef.current[index + 1]?.focus();
   };
 
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+      inputsRef.current[index - 1]?.focus();
     }
   };
 
-  const handleOtpPaste = (e: React.ClipboardEvent) => {
+  const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (!pasted) return;
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     const newOtp = [...otp];
-    for (let i = 0; i < 6; i++) {
-      newOtp[i] = pasted[i] || "";
-    }
+    pasted.split("").forEach((char, i) => {
+      newOtp[i] = char;
+    });
     setOtp(newOtp);
-    const focusIndex = Math.min(pasted.length, 5);
-    inputRefs.current[focusIndex]?.focus();
-    if (pasted.length === 6) handleVerify(pasted);
+    inputsRef.current[Math.min(pasted.length, 5)]?.focus();
   };
 
-  const handleVerify = async (code?: string) => {
-    setError("");
-    const otpCode = code || otp.join("");
-    if (otpCode.length !== 6) { setError("Please enter all 6 digits"); return; }
-    setSending(true);
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email,
-      token: otpCode,
-      type: "email",
-    });
-    if (verifyError) {
-      setSending(false);
-      setError(verifyError.message);
+  const handleVerify = async () => {
+    const token = otp.join("");
+    if (token.length !== 6) {
+      setError("Please enter all 6 digits.");
       return;
     }
-    if (flow === "signup" && name) {
-      await supabase.auth.updateUser({ data: { name } });
+
+    setLoading(true);
+    setError("");
+
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: "signup",
+    });
+
+    setLoading(false);
+
+    if (error) {
+      setError("Invalid or expired OTP. Please try again.");
+      setOtp(Array(6).fill(""));
+      inputsRef.current[0]?.focus();
+      return;
     }
-    setSending(false);
+
     navigate("/");
   };
 
   const handleResend = async () => {
-    if (cooldown > 0) return;
-    setOtp(["", "", "", "", "", ""]);
+    if (resendCooldown > 0) return;
     setError("");
-    setSending(true);
-    const err = await sendOtp(email);
-    setSending(false);
-    if (err) { setError(err); } else { setCooldown(RESEND_COOLDOWN); }
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    if (error) {
+      setError("Failed to resend OTP. Please try again.");
+    } else {
+      setResendCooldown(60);
+    }
   };
 
-  if (!email) return null;
-
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 animate-fade-in">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="font-heading text-3xl gold-text mb-2">Verify OTP</h1>
+        <div className="text-center mb-10">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 rounded-full border gold-border flex items-center justify-center gold-glow">
+              <ShieldCheck size={28} className="gold-text" />
+            </div>
+          </div>
+          <h1 className="font-heading text-4xl gold-text mb-2">Verify Email</h1>
           <p className="text-muted-foreground font-body text-sm">
-            Enter the 6-digit code sent to your email
+            We sent a 6-digit code to
           </p>
+          <p className="gold-text font-body text-sm font-medium mt-1">{email}</p>
         </div>
 
-        <div className="space-y-5 border gold-border rounded-lg p-8 bg-card">
+        <div className="bg-card border gold-border rounded-lg p-8 gold-glow">
           {error && (
-            <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded px-4 py-2.5 font-body">
+            <div className="mb-5 px-4 py-3 rounded bg-destructive/10 border border-destructive/30 text-destructive text-sm font-body">
               {error}
             </div>
           )}
 
-          <div className="text-center mb-2">
-            <p className="text-secondary-foreground font-body text-sm">
-              Code sent to <span className="gold-text font-medium">{email}</span>
-            </p>
-          </div>
-
-          <div>
-            <label className="text-xs text-muted-foreground uppercase tracking-wider mb-3 block font-body text-center">
-              OTP Code
-            </label>
-            <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
-              {otp.map((digit, i) => (
-                <input
-                  key={i}
-                  ref={(el) => { inputRefs.current[i] = el; }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(i, e.target.value)}
-                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                  className="w-11 h-12 bg-secondary border gold-border rounded text-center text-lg font-mono text-secondary-foreground font-body focus:outline-none focus:border-primary focus:shadow-[0_0_15px_hsla(43,56%,52%,0.2)] transition-all cursor-none"
-                />
-              ))}
-            </div>
+          <div
+            className="flex gap-3 justify-center mb-8"
+            onPaste={handlePaste}
+          >
+            {otp.map((digit, i) => (
+              <input
+                key={i}
+                ref={(el) => { inputsRef.current[i] = el; }}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleChange(i, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(i, e)}
+                className="w-12 h-14 text-center text-xl font-heading gold-text bg-secondary border-2 gold-border rounded-lg focus:outline-none focus:border-primary transition-all duration-200 cursor-none"
+              />
+            ))}
           </div>
 
           <button
-            onClick={() => handleVerify()}
-            disabled={sending || otp.join("").length !== 6}
-            className="w-full py-3 bg-primary text-primary-foreground font-body font-medium rounded hover:opacity-90 hover:shadow-[0_0_20px_hsla(43,56%,52%,0.3)] transition-all cursor-none disabled:opacity-50"
+            onClick={handleVerify}
+            disabled={loading || otp.join("").length !== 6}
+            className="w-full py-3 bg-primary text-primary-foreground font-medium rounded hover:opacity-90 transition-opacity cursor-none disabled:opacity-50 font-body text-sm tracking-wider uppercase"
           >
-            {sending ? "Verifying..." : "Verify & Continue"}
+            {loading ? "Verifying..." : "Verify & Continue"}
           </button>
 
-          <div className="flex items-center justify-between text-xs font-body">
-            <Link
-              to={flow === "signup" ? "/signup" : "/login"}
-              className="gold-text hover:underline cursor-none"
-            >
-              ← Back
-            </Link>
+          <div className="text-center mt-5">
             <button
-              type="button"
               onClick={handleResend}
-              disabled={cooldown > 0 || sending}
-              className="gold-text hover:underline cursor-none disabled:opacity-50 disabled:no-underline"
+              disabled={resendCooldown > 0}
+              className="text-sm font-body text-muted-foreground hover:text-primary transition-colors cursor-none disabled:opacity-40"
             >
-              {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
+              {resendCooldown > 0
+                ? `Resend code in ${resendCooldown}s`
+                : "Resend code"}
             </button>
           </div>
         </div>
