@@ -1,5 +1,5 @@
-import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavigationProps {
   onOpenAbout: () => void;
@@ -7,18 +7,31 @@ interface NavigationProps {
   onOpenFeedback: () => void;
 }
 
-const Navigation = ({ onOpenAbout, onOpenSupport, onOpenFeedback }: NavigationProps) => {
+const Navigation = ({
+  onOpenAbout,
+  onOpenSupport,
+  onOpenFeedback,
+}: NavigationProps) => {
   const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
 
   const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    } else {
+      navigate("/");
+      setTimeout(
+        () => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }),
+        300
+      );
+    }
   };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-40 glass-dark border-b gold-border">
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-end">
-        <div className="flex gap-6 text-sm font-body items-center">
+        <div className="flex gap-6 text-sm font-body items-center flex-wrap">
           {[
             { label: "Events", action: () => scrollTo("events") },
             { label: "Gallery", action: () => scrollTo("gallery") },
@@ -34,22 +47,22 @@ const Navigation = ({ onOpenAbout, onOpenSupport, onOpenFeedback }: NavigationPr
               {item.label}
             </button>
           ))}
-
-          {!loading && (user ? (
-            <button
-              onClick={() => logout()}
-              className="ml-2 px-4 py-1.5 border gold-border rounded text-xs uppercase tracking-wider gold-text hover:bg-primary hover:text-primary-foreground transition-all cursor-none"
-            >
-              Logout
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate("/login")}
-              className="ml-2 px-4 py-1.5 bg-primary text-primary-foreground rounded text-xs uppercase tracking-wider font-medium hover:opacity-90 hover:shadow-[0_0_20px_hsla(43,56%,52%,0.3)] transition-all cursor-none"
-            >
-              Login
-            </button>
-          ))}
+          {!loading &&
+            (user ? (
+              <button
+                onClick={() => logout()}
+                className="ml-2 px-4 py-1.5 border gold-border rounded text-xs uppercase tracking-wider gold-text hover:bg-primary hover:text-primary-foreground transition-all cursor-none"
+              >
+                Logout
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/login")}
+                className="ml-2 px-4 py-1.5 bg-primary text-primary-foreground rounded text-xs uppercase tracking-wider font-medium hover:opacity-90 transition-all cursor-none"
+              >
+                Login
+              </button>
+            ))}
         </div>
       </div>
     </nav>
