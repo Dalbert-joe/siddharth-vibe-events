@@ -12,8 +12,7 @@ import Modal from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { Instagram, Mail, MapPin } from "lucide-react";
 
-const INSTAGRAM_URL =
-  "https://www.instagram.com/siddharth_vibe_events?igsh=aTExYmU5ZWc5NjBt";
+const INSTAGRAM_URL = "https://www.instagram.com/siddharth_vibe_events?igsh=aTExYmU5ZWc5NjBt";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -22,7 +21,6 @@ const Index = () => {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-
   const [feedbackName, setFeedbackName] = useState("");
   const [feedbackPhone, setFeedbackPhone] = useState("");
   const [feedbackMessage, setFeedbackMessage] = useState("");
@@ -40,10 +38,8 @@ const Index = () => {
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!feedbackName || !feedbackPhone || !feedbackMessage) return;
-
     setFeedbackLoading(true);
     setFeedbackStatus("idle");
-
     try {
       const res = await fetch("/api/feedback", {
         method: "POST",
@@ -54,7 +50,6 @@ const Index = () => {
           message: feedbackMessage,
         }),
       });
-
       if (res.ok) {
         setFeedbackStatus("success");
         setFeedbackName("");
@@ -79,7 +74,6 @@ const Index = () => {
         onOpenSupport={() => setSupportOpen(true)}
         onOpenFeedback={handleOpenFeedback}
       />
-
       <HeroSection />
       <EventCards />
       <AreaRestrictions />
@@ -107,30 +101,28 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-3">
             <Mail size={18} className="gold-text shrink-0" />
-            
-              href="mailto:siddharthvibe.events@gmail.com"
+            <button
+              onClick={() => { window.location.href = "mailto:siddharthvibe.events@gmail.com"; }}
               className="text-secondary-foreground hover:text-primary transition-colors cursor-none"
             >
               siddharthvibe.events@gmail.com
-            </a>
+            </button>
           </div>
           <div className="flex gap-3 pt-2">
-            
-              href={INSTAGRAM_URL}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => window.open(INSTAGRAM_URL, "_blank")}
               className="flex items-center gap-2 px-4 py-2 bg-secondary rounded font-medium text-secondary-foreground hover:bg-muted transition-colors cursor-none"
             >
               <Instagram size={16} />
               Instagram
-            </a>
-            
-              href="mailto:siddharthvibe.events@gmail.com"
+            </button>
+            <button
+              onClick={() => { window.location.href = "mailto:siddharthvibe.events@gmail.com"; }}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded font-medium hover:opacity-90 transition-opacity cursor-none"
             >
               <Mail size={16} />
               Email
-            </a>
+            </button>
           </div>
           <p className="text-[10px] text-muted-foreground/50 pt-4 text-center">
             Designed by Dalbert Joe
