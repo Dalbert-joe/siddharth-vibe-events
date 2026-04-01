@@ -122,7 +122,7 @@ const Gallery = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background cursor-none">
       <Navigation
         onOpenAbout={() => setAboutOpen(true)}
         onOpenSupport={() => setSupportOpen(true)}
@@ -230,7 +230,7 @@ const Gallery = () => {
       {/* Lightbox */}
       {selectedMedia && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-background/95 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-background/95 backdrop-blur-sm cursor-none"
           onClick={() => setSelectedMedia(null)}
         >
           <div
