@@ -17,6 +17,31 @@ const GoldFrame = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
+// Extracted to avoid calling useState inside .map()
+const PreviewItem = ({ file }: { file: MediaFile }) => {
+  const [imgError, setImgError] = useState(false);
+  const src = file.thumbnailUrl || file.directUrl;
+  return (
+    <GoldFrame>
+      <div className="aspect-[4/3] overflow-hidden bg-secondary">
+        {imgError ? (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+            <ImageOff size={20} />
+          </div>
+        ) : (
+          <img
+            src={src}
+            alt=""
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            onError={() => setImgError(true)}
+            loading="lazy"
+          />
+        )}
+      </div>
+    </GoldFrame>
+  );
+};
+
 const GallerySection = () => {
   const navigate = useNavigate();
   const [previews, setPreviews] = useState<MediaFile[]>([]);
@@ -60,29 +85,9 @@ const GallerySection = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 mb-12">
-            {previews.map((file) => {
-              const [imgError, setImgError] = useState(false);
-              const src = file.thumbnailUrl || file.directUrl;
-              return (
-                <GoldFrame key={file.id}>
-                  <div className="aspect-[4/3] overflow-hidden bg-secondary">
-                    {imgError ? (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                        <ImageOff size={20} />
-                      </div>
-                    ) : (
-                      <img
-                        src={src}
-                        alt=""
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        onError={() => setImgError(true)}
-                        loading="lazy"
-                      />
-                    )}
-                  </div>
-                </GoldFrame>
-              );
-            })}
+            {previews.map((file) => (
+              <PreviewItem key={file.id} file={file} />
+            ))}
           </div>
         )}
 
