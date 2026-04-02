@@ -1,12 +1,9 @@
 {
+  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }],
   "installCommand": "npm install --legacy-peer-deps",
   "functions": {
-    "api/drive.ts": {
-      "maxDuration": 10
-    },
-    "api/feedback.ts": {
-      "maxDuration": 10
-    }
+    "api/drive.ts": { "maxDuration": 10 },
+    "api/feedback.ts": { "maxDuration": 10 }
   },
   "headers": [
     {
