@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import GoldCursor from "@/components/GoldCursor";
 import ScrollConfetti from "@/components/ScrollConfetti";
 import Navigation from "@/components/Navigation";
 import HeroSection from "@/components/HeroSection";
 import EventCards from "@/components/EventCards";
 import AreaRestrictions from "@/components/AreaRestrictions";
 import GallerySection from "@/components/GallerySection";
+import ProductsSection from "@/components/ProductsSection";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,7 +28,7 @@ const Index = () => {
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "success" | "error">("idle");
 
-  // ── Track page view ──────────────────────────────────────────────────────
+  // Track page view
   useEffect(() => {
     supabase.from("page_views").insert({ page: "home" });
   }, []);
@@ -50,11 +50,7 @@ const Index = () => {
       const res = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: feedbackName,
-          phone: feedbackPhone,
-          message: feedbackMessage,
-        }),
+        body: JSON.stringify({ name: feedbackName, phone: feedbackPhone, message: feedbackMessage }),
       });
       if (res.ok) {
         setFeedbackStatus("success");
@@ -73,7 +69,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <GoldCursor />
       <ScrollConfetti />
       <Navigation
         onOpenAbout={() => setAboutOpen(true)}
@@ -83,6 +78,7 @@ const Index = () => {
       <HeroSection />
       <EventCards />
       <AreaRestrictions />
+      <ProductsSection />
       <GallerySection />
       <Footer />
 
@@ -119,43 +115,31 @@ const Index = () => {
               onClick={() => window.open(INSTAGRAM_URL, "_blank")}
               className="flex items-center gap-2 px-4 py-2 bg-secondary rounded font-medium text-secondary-foreground hover:bg-muted transition-colors cursor-none"
             >
-              <Instagram size={16} />
-              Instagram
+              <Instagram size={16} /> Instagram
             </button>
             <button
               onClick={() => { window.location.href = "mailto:siddharthvibe.events@gmail.com"; }}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded font-medium hover:opacity-90 transition-opacity cursor-none"
             >
-              <Mail size={16} />
-              Email
+              <Mail size={16} /> Email
             </button>
           </div>
-          <p className="text-[10px] text-muted-foreground/50 pt-4 text-center">
-            Designed by Dalbert Joe
-          </p>
+          <p className="text-[10px] text-muted-foreground/50 pt-4 text-center">Designed by Dalbert Joe</p>
         </div>
       </Modal>
 
       <Modal
         open={feedbackOpen}
-        onClose={() => {
-          setFeedbackOpen(false);
-          setFeedbackStatus("idle");
-        }}
+        onClose={() => { setFeedbackOpen(false); setFeedbackStatus("idle"); }}
         title="Feedback"
       >
         {feedbackStatus === "success" ? (
           <div className="text-center py-6 space-y-3">
             <div className="text-4xl">✨</div>
             <p className="gold-text font-heading text-xl">Thank you!</p>
-            <p className="text-muted-foreground font-body text-sm">
-              Your feedback has been received.
-            </p>
+            <p className="text-muted-foreground font-body text-sm">Your feedback has been received.</p>
             <button
-              onClick={() => {
-                setFeedbackStatus("idle");
-                setFeedbackOpen(false);
-              }}
+              onClick={() => { setFeedbackStatus("idle"); setFeedbackOpen(false); }}
               className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded text-sm font-body hover:opacity-90 cursor-none"
             >
               Close
@@ -169,52 +153,25 @@ const Index = () => {
               </div>
             )}
             <div>
-              <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">
-                Name
-              </label>
-              <input
-                type="text"
-                value={feedbackName}
-                onChange={(e) => setFeedbackName(e.target.value)}
+              <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Name</label>
+              <input type="text" value={feedbackName} onChange={(e) => setFeedbackName(e.target.value)}
                 className="w-full bg-secondary border gold-border rounded px-4 py-2.5 text-sm text-secondary-foreground focus:outline-none focus:border-primary transition-colors cursor-none"
-                placeholder="Your name"
-                maxLength={100}
-                required
-              />
+                placeholder="Your name" maxLength={100} required />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                value={feedbackPhone}
-                onChange={(e) => setFeedbackPhone(e.target.value)}
+              <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Phone Number</label>
+              <input type="tel" value={feedbackPhone} onChange={(e) => setFeedbackPhone(e.target.value)}
                 className="w-full bg-secondary border gold-border rounded px-4 py-2.5 text-sm text-secondary-foreground focus:outline-none focus:border-primary transition-colors cursor-none"
-                placeholder="Your phone number"
-                maxLength={15}
-                required
-              />
+                placeholder="Your phone number" maxLength={15} required />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">
-                Message
-              </label>
-              <textarea
-                rows={4}
-                value={feedbackMessage}
-                onChange={(e) => setFeedbackMessage(e.target.value)}
+              <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1 block">Message</label>
+              <textarea rows={4} value={feedbackMessage} onChange={(e) => setFeedbackMessage(e.target.value)}
                 className="w-full bg-secondary border gold-border rounded px-4 py-2.5 text-sm text-secondary-foreground focus:outline-none focus:border-primary transition-colors resize-none cursor-none"
-                placeholder="Your message"
-                maxLength={1000}
-                required
-              />
+                placeholder="Your message" maxLength={1000} required />
             </div>
-            <button
-              type="submit"
-              disabled={feedbackLoading}
-              className="w-full py-3 bg-primary text-primary-foreground font-medium rounded hover:opacity-90 transition-opacity cursor-none disabled:opacity-50"
-            >
+            <button type="submit" disabled={feedbackLoading}
+              className="w-full py-3 bg-primary text-primary-foreground font-medium rounded hover:opacity-90 transition-opacity cursor-none disabled:opacity-50">
               {feedbackLoading ? "Submitting..." : "Submit Feedback"}
             </button>
           </form>
