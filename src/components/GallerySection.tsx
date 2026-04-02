@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ImageOff } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
-interface MediaFile {
+interface GalleryMedia {
   id: string;
-  name: string;
-  mimeType: string;
-  thumbnailUrl: string | null;
-  directUrl: string;
+  file_name: string;
+  public_url: string;
+  mime_type: string;
+  caption: string | null;
 }
 
 const GoldFrame = ({ children }: { children: React.ReactNode }) => (
@@ -17,21 +18,25 @@ const GoldFrame = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-// Extracted to avoid calling useState inside .map()
-const PreviewItem = ({ file }: { file: MediaFile }) => {
+const PreviewItem = ({ item }: { item: GalleryMedia }) => {
   const [imgError, setImgError] = useState(false);
-  const src = file.thumbnailUrl || file.directUrl;
+  const isVideo = item.mime_type?.startsWith("video/");
+
   return (
     <GoldFrame>
-      <div className="aspect-[4/3] overflow-hidden bg-secondary">
-        {imgError ? (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+      <div className="aspect-[4/3] overflow-hidden bg-secondary flex items-center justify-center">
+        {isVideo ? (
+          <div className="w-full h-full flex items-center justify-center bg-black/40">
+            <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[20px] border-l-[hsl(43,56%,52%)] border-b-[10px] border-b-transparent" />
+          </div>
+        ) : imgError ? (
+          <div className="flex items-center justify-center text-muted-foreground">
             <ImageOff size={20} />
           </div>
         ) : (
           <img
-            src={src}
-            alt=""
+            src={item.public_url}
+            alt={item.file_name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => setImgError(true)}
             loading="lazy"
@@ -44,14 +49,17 @@ const PreviewItem = ({ file }: { file: MediaFile }) => {
 
 const GallerySection = () => {
   const navigate = useNavigate();
-  const [previews, setPreviews] = useState<MediaFile[]>([]);
+  const [previews, setPreviews] = useState<GalleryMedia[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/drive")
-      .then((r) => r.json())
-      .then((data) => {
-        setPreviews(data.preview || []);
+    supabase
+      .from("gallery_media")
+      .select("id, file_name, public_url, mime_type, caption")
+      .order("created_at", { ascending: false })
+      .limit(6)
+      .then(({ data }) => {
+        setPreviews(data || []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -76,17 +84,15 @@ const GallerySection = () => {
             {Array.from({ length: 4 }).map((_, i) => (
               <GoldFrame key={i}>
                 <div className="aspect-[4/3] bg-card flex items-center justify-center">
-                  <span className="text-muted-foreground text-xs font-body text-center px-4">
-                    Coming soon
-                  </span>
+                  <span className="text-muted-foreground text-xs font-body text-center px-4">Coming soon</span>
                 </div>
               </GoldFrame>
             ))}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 mb-12">
-            {previews.map((file) => (
-              <PreviewItem key={file.id} file={file} />
+            {previews.map((item) => (
+              <PreviewItem key={item.id} item={item} />
             ))}
           </div>
         )}
