@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import GoldCursor from "@/components/GoldCursor";
 import ScrollConfetti from "@/components/ScrollConfetti";
@@ -10,6 +10,7 @@ import GallerySection from "@/components/GallerySection";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { Instagram, Mail, MapPin } from "lucide-react";
 
 const INSTAGRAM_URL = "https://www.instagram.com/siddharth_vibe_events?igsh=aTExYmU5ZWc5NjBt";
@@ -26,6 +27,11 @@ const Index = () => {
   const [feedbackMessage, setFeedbackMessage] = useState("");
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "success" | "error">("idle");
+
+  // ── Track page view ──────────────────────────────────────────────────────
+  useEffect(() => {
+    supabase.from("page_views").insert({ page: "home" });
+  }, []);
 
   const handleOpenFeedback = () => {
     if (!user) {
