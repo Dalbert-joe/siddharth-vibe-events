@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ImageOff, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ImageOff, ShieldCheck, Play } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Modal from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +26,68 @@ const GoldFrame = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
+// Generates a real thumbnail frame from the video using an offscreen canvas
+const VideoThumbnail = ({ src }: { src: string }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const video = document.createElement("video");
+    video.crossOrigin = "anonymous";
+    video.muted = true;
+    video.preload = "metadata";
+    video.src = src;
+
+    const capture = () => {
+      try {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        canvas.width = video.videoWidth || 320;
+        canvas.height = video.videoHeight || 240;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+        setReady(true);
+      } catch {
+        setError(true);
+      }
+    };
+
+    video.addEventListener("loadeddata", () => {
+      video.currentTime = Math.min(1, video.duration * 0.1 || 1);
+    });
+    video.addEventListener("seeked", capture);
+    video.addEventListener("error", () => setError(true));
+    video.load();
+
+    return () => { video.src = ""; };
+  }, [src]);
+
+  return (
+    <div className="w-full h-full relative">
+      <canvas
+        ref={canvasRef}
+        className={`w-full h-full object-cover absolute inset-0 transition-opacity duration-300 ${ready ? "opacity-100" : "opacity-0"}`}
+      />
+      {!ready && (
+        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+          {error
+            ? <ImageOff size={20} className="text-muted-foreground" />
+            : <div className="w-5 h-5 rounded-full border-2 border-[hsl(43,56%,52%)] border-t-transparent animate-spin" />
+          }
+        </div>
+      )}
+      {/* Play button overlay */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        <div className="w-12 h-12 rounded-full border-2 gold-border flex items-center justify-center gold-glow bg-black/40">
+          <Play size={16} className="text-[hsl(43,56%,52%)] ml-0.5" fill="currentColor" />
+        </div>
+        <span className="text-xs font-body text-muted-foreground mt-2">Click to play</span>
+      </div>
+    </div>
+  );
+};
+
 const MediaItem = ({ item, onClick }: { item: GalleryMedia; onClick: () => void }) => {
   const [imgError, setImgError] = useState(false);
   const isVideo = item.mime_type?.startsWith("video/");
@@ -37,14 +99,7 @@ const MediaItem = ({ item, onClick }: { item: GalleryMedia; onClick: () => void 
         onClick={onClick}
       >
         {isVideo ? (
-          <div className="w-full h-full flex items-center justify-center bg-black/50">
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-full border-2 gold-border flex items-center justify-center mx-auto mb-2 gold-glow">
-                <div className="w-0 h-0 border-t-[8px] border-t-transparent border-l-[16px] border-l-[hsl(43,56%,52%)] border-b-[8px] border-b-transparent ml-1" />
-              </div>
-              <span className="text-xs font-body text-muted-foreground">Click to play</span>
-            </div>
-          </div>
+          <VideoThumbnail src={item.public_url} />
         ) : imgError ? (
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <ImageOff size={24} />
