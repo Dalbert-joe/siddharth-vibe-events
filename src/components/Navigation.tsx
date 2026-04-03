@@ -37,7 +37,6 @@ const Navigation = ({
             { label: "Gallery", action: () => scrollTo("gallery") },
             { label: "About", action: onOpenAbout },
             { label: "Support", action: onOpenSupport },
-            { label: "Feedback", action: onOpenFeedback },
           ].map((item) => (
             <button
               key={item.label}
@@ -47,6 +46,22 @@ const Navigation = ({
               {item.label}
             </button>
           ))}
+
+          {/* Products button — navigates to /products page */}
+          <button
+            onClick={() => navigate("/products")}
+            className="gold-text-light opacity-70 hover:opacity-100 transition-opacity tracking-wider uppercase text-xs cursor-none"
+          >
+            Products
+          </button>
+
+          <button
+            onClick={onOpenFeedback}
+            className="gold-text-light opacity-70 hover:opacity-100 transition-opacity tracking-wider uppercase text-xs cursor-none"
+          >
+            Feedback
+          </button>
+
           {!loading &&
             (user ? (
               <button
