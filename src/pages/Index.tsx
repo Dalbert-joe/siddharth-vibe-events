@@ -84,7 +84,11 @@ const Index = () => {
       <ProductsHomeSection />
 
       <GallerySection />
-      <Footer />
+      <Footer
+        onOpenAbout={() => setAboutOpen(true)}
+        onOpenSupport={() => setSupportOpen(true)}
+        onOpenFeedback={handleOpenFeedback}
+      />
 
       {/* Side pop-up product ads — appear while scrolling */}
       <ProductPopupAd />
