@@ -7,42 +7,62 @@ const supabase = createClient(
 );
 
 const rateLimitMap = new Map<string, number[]>();
+const RATE_LIMIT_MAX = 3;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, timestamps] of rateLimitMap.entries()) {
+    const valid = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+    if (valid.length === 0) rateLimitMap.delete(ip);
+    else rateLimitMap.set(ip, valid);
+  }
+}, 60 * 60 * 1000);
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
-  const windowMs = 60 * 1000;
-  const maxRequests = 5;
   const timestamps = (rateLimitMap.get(ip) || []).filter(
-    (t) => now - t < windowMs
+    (t) => now - t < RATE_LIMIT_WINDOW_MS
   );
-  if (timestamps.length >= maxRequests) return true;
+  if (timestamps.length >= RATE_LIMIT_MAX) return true;
   timestamps.push(now);
   rateLimitMap.set(ip, timestamps);
   return false;
+}
+
+function getClientIp(req: VercelRequest): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") return forwarded.split(",")[0].trim();
+  if (typeof req.headers["x-real-ip"] === "string") return req.headers["x-real-ip"];
+  return "unknown";
 }
 
 function sanitize(str: string): string {
   return str
     .replace(/[<>]/g, "")
     .replace(/javascript:/gi, "")
+    .replace(/on\w+=/gi, "")
     .trim()
     .slice(0, 1000);
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Access-Control-Allow-Origin", "https://siddharthevents.in");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  const ip =
-    (req.headers["x-forwarded-for"] as string)?.split(",")[0] || "unknown";
+  if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+  const ip = getClientIp(req);
 
   if (isRateLimited(ip)) {
-    return res.status(429).json({ error: "Too many requests. Please wait." });
+    return res.status(429).json({
+      error: "Too many requests. Please wait 10 minutes before trying again.",
+    });
   }
-
-  res.setHeader("Access-Control-Allow-Origin", "https://siddharthevents.in");
-  res.setHeader("Access-Control-Allow-Methods", "POST");
 
   const { name, phone, message } = req.body || {};
 
@@ -50,8 +70,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
+  if (
+    typeof name !== "string" ||
+    typeof phone !== "string" ||
+    typeof message !== "string"
+  ) {
+    return res.status(400).json({ error: "Invalid input" });
+  }
+
   const phoneRegex = /^[0-9+\-\s()]{7,15}$/;
-  if (!phoneRegex.test(phone)) {
+  if (!phoneRegex.test(phone.trim())) {
     return res.status(400).json({ error: "Invalid phone number" });
   }
 
@@ -59,13 +87,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const cleanPhone = sanitize(phone);
   const cleanMessage = sanitize(message);
 
-  if (cleanName.length < 2) {
-    return res.status(400).json({ error: "Name too short" });
-  }
+  if (cleanName.length < 2) return res.status(400).json({ error: "Name too short" });
+  if (cleanMessage.length < 5) return res.status(400).json({ error: "Message too short" });
 
-  const { error } = await supabase.from("feedback").insert([
-    { name: cleanName, phone: cleanPhone, message: cleanMessage },
-  ]);
+  const { error } = await supabase
+    .from("feedback")
+    .insert([{ name: cleanName, phone: cleanPhone, message: cleanMessage }]);
 
   if (error) {
     console.error("Supabase error:", error.message);
