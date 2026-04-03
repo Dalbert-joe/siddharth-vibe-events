@@ -6,7 +6,7 @@ import HeroSection from "@/components/HeroSection";
 import EventCards from "@/components/EventCards";
 import AreaRestrictions from "@/components/AreaRestrictions";
 import GallerySection from "@/components/GallerySection";
-import ProductsSection from "@/components/ProductsSection";
+import ProductPopupAd from "@/components/ProductPopupAd";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,9 +78,12 @@ const Index = () => {
       <HeroSection />
       <EventCards />
       <AreaRestrictions />
-      <ProductsSection />
+      {/* ProductsSection removed from home page */}
       <GallerySection />
       <Footer />
+
+      {/* Side pop-up product ads — appear while scrolling */}
+      <ProductPopupAd />
 
       <Modal open={aboutOpen} onClose={() => setAboutOpen(false)} title="About Us">
         <div className="space-y-4 text-secondary-foreground font-body text-sm leading-relaxed">
