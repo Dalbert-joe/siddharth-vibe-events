@@ -10,7 +10,7 @@ interface FooterProps {
 
 const Footer = ({ onOpenAbout, onOpenSupport, onOpenFeedback }: FooterProps) => {
   const navigate = useNavigate();
-  const footerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -18,28 +18,29 @@ const Footer = ({ onOpenAbout, onOpenSupport, onOpenFeedback }: FooterProps) => 
       ([entry]) => {
         if (entry.isIntersecting) setVisible(true);
       },
-      { threshold: 0.05 }
+      { threshold: 0.5 }
     );
-    if (footerRef.current) observer.observe(footerRef.current);
+    if (sentinelRef.current) observer.observe(sentinelRef.current);
     return () => observer.disconnect();
   }, []);
 
   return (
     <footer className="border-t gold-border relative overflow-hidden">
-      {/* ── Always-visible stub ── */}
-      <div className="py-10 text-center">
+
+      {/* ── Always-visible stub — observer watches this ── */}
+      <div ref={sentinelRef} className="py-10 text-center">
         <h3 className="font-heading text-xl gold-text mb-1">Siddharth Vibe Events</h3>
         <p className="text-muted-foreground text-xs font-body">Since 1991</p>
       </div>
 
       {/* ── Sliding full footer ── */}
       <div
-        ref={footerRef}
-        className="transition-all duration-700 ease-out overflow-hidden"
         style={{
           maxHeight: visible ? "1000px" : "0px",
           opacity: visible ? 1 : 0,
           transform: visible ? "translateY(0)" : "translateY(40px)",
+          transition: "max-height 0.8s ease-out, opacity 0.6s ease-out, transform 0.6s ease-out",
+          overflow: "hidden",
         }}
       >
         {/* Subtle background glow */}
@@ -102,7 +103,7 @@ const Footer = ({ onOpenAbout, onOpenSupport, onOpenFeedback }: FooterProps) => 
                   <li key={label}>
                     <button
                       onClick={action}
-                      className="cursor-none font-body text-sm text-muted-foreground hover:gold-text hover:text-primary transition-colors duration-200 group flex items-center gap-2"
+                      className="cursor-none font-body text-sm text-muted-foreground hover:text-primary transition-colors duration-200 group flex items-center gap-2"
                     >
                       <span className="gold-text opacity-0 group-hover:opacity-100 transition-opacity text-xs">◆</span>
                       {label}
