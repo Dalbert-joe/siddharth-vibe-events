@@ -7,6 +7,7 @@ import EventCards from "@/components/EventCards";
 import AreaRestrictions from "@/components/AreaRestrictions";
 import GallerySection from "@/components/GallerySection";
 import ProductPopupAd from "@/components/ProductPopupAd";
+import ProductsHomeSection from "@/components/ProductsHomeSection";
 import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,7 +79,10 @@ const Index = () => {
       <HeroSection />
       <EventCards />
       <AreaRestrictions />
-      {/* ProductsSection removed from home page */}
+
+      {/* Products preview section with mascot sticker */}
+      <ProductsHomeSection />
+
       <GallerySection />
       <Footer />
 
