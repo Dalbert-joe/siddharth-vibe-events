@@ -16,7 +16,14 @@ interface GalleryMedia {
   public_url: string;
   mime_type: string;
   caption: string | null;
+  group_id: string | null;
   created_at: string;
+}
+
+interface GalleryGroup {
+  id: string;
+  name: string;
+  sort_order: number;
 }
 
 const GoldFrame = ({ children }: { children: React.ReactNode }) => (
@@ -26,7 +33,6 @@ const GoldFrame = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-// Generates a real thumbnail frame from the video using an offscreen canvas
 const VideoThumbnail = ({ src }: { src: string }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
@@ -59,7 +65,6 @@ const VideoThumbnail = ({ src }: { src: string }) => {
     video.addEventListener("seeked", capture);
     video.addEventListener("error", () => setError(true));
     video.load();
-
     return () => { video.src = ""; };
   }, [src]);
 
@@ -77,7 +82,6 @@ const VideoThumbnail = ({ src }: { src: string }) => {
           }
         </div>
       )}
-      {/* Play button overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
         <div className="w-12 h-12 rounded-full border-2 gold-border flex items-center justify-center gold-glow bg-black/40">
           <Play size={16} className="text-[hsl(43,56%,52%)] ml-0.5" fill="currentColor" />
@@ -129,6 +133,8 @@ const Gallery = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const [media, setMedia] = useState<GalleryMedia[]>([]);
+  const [groups, setGroups] = useState<GalleryGroup[]>([]);
+  const [activeGroup, setActiveGroup] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedMedia, setSelectedMedia] = useState<GalleryMedia | null>(null);
@@ -147,15 +153,15 @@ const Gallery = () => {
   useEffect(() => {
     supabase.from("page_views").insert({ page: "gallery" });
 
-    supabase
-      .from("gallery_media")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .then(({ data, error: err }) => {
-        if (err) setError("Failed to load gallery.");
-        else setMedia(data || []);
-        setLoading(false);
-      });
+    Promise.all([
+      supabase.from("gallery_media").select("*").order("created_at", { ascending: false }),
+      supabase.from("gallery_groups").select("id, name, sort_order").order("sort_order", { ascending: true }),
+    ]).then(([mediaRes, groupsRes]) => {
+      if (mediaRes.error) setError("Failed to load gallery.");
+      else setMedia(mediaRes.data || []);
+      setGroups(groupsRes.data || []);
+      setLoading(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -170,6 +176,14 @@ const Gallery = () => {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
+
+  // Filtered media based on active group tab
+  const filteredMedia = activeGroup === "all"
+    ? media
+    : media.filter((m) => m.group_id === activeGroup);
+
+  // Only show group tabs if there are groups with media
+  const groupsWithMedia = groups.filter((g) => media.some((m) => m.group_id === g.id));
 
   return (
     <div className="min-h-screen bg-background cursor-none">
@@ -189,7 +203,6 @@ const Gallery = () => {
             >
               <ArrowLeft size={16} /> Back to Home
             </button>
-
             {isAdmin && (
               <button
                 onClick={() => navigate("/admin")}
@@ -201,9 +214,36 @@ const Gallery = () => {
           </div>
 
           <h1 className="font-heading text-5xl gold-text text-center mb-4">Gallery</h1>
-          <p className="text-center text-muted-foreground font-body mb-16">
+          <p className="text-center text-muted-foreground font-body mb-8">
             Moments captured in elegance
           </p>
+
+          {/* Group filter tabs — only shown if groups exist */}
+          {!loading && groupsWithMedia.length > 0 && (
+            <div className="flex gap-2 flex-wrap justify-center mb-10">
+              <button
+                onClick={() => setActiveGroup("all")}
+                className={`px-5 py-2 rounded-full text-xs font-body tracking-wider uppercase transition-all cursor-none
+                  ${activeGroup === "all"
+                    ? "bg-primary text-primary-foreground"
+                    : "border gold-border gold-text opacity-60 hover:opacity-100"}`}
+              >
+                All ({media.length})
+              </button>
+              {groupsWithMedia.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => setActiveGroup(g.id)}
+                  className={`px-5 py-2 rounded-full text-xs font-body tracking-wider uppercase transition-all cursor-none
+                    ${activeGroup === g.id
+                      ? "bg-primary text-primary-foreground"
+                      : "border gold-border gold-text opacity-60 hover:opacity-100"}`}
+                >
+                  {g.name} ({media.filter((m) => m.group_id === g.id).length})
+                </button>
+              ))}
+            </div>
+          )}
 
           {loading && (
             <div className="flex justify-center items-center py-32">
@@ -215,10 +255,10 @@ const Gallery = () => {
             <div className="text-center py-20 text-muted-foreground font-body">{error}</div>
           )}
 
-          {!loading && !error && media.length === 0 && (
+          {!loading && !error && filteredMedia.length === 0 && (
             <div className="text-center py-20 text-muted-foreground font-body">
-              No media uploaded yet.
-              {isAdmin && (
+              {activeGroup === "all" ? "No media uploaded yet." : "No media in this group yet."}
+              {isAdmin && activeGroup === "all" && (
                 <p className="mt-2 text-sm">
                   <button onClick={() => navigate("/admin")} className="gold-text underline cursor-none">
                     Go to Admin Panel
@@ -228,9 +268,9 @@ const Gallery = () => {
             </div>
           )}
 
-          {media.length > 0 && (
+          {filteredMedia.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {media.map((item) => (
+              {filteredMedia.map((item) => (
                 <MediaItem key={item.id} item={item} onClick={() => setSelectedMedia(item)} />
               ))}
             </div>
