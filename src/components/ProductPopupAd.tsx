@@ -14,24 +14,29 @@ interface Product {
 interface PopupAd {
   product: Product;
   side: "left" | "right";
-  id: string; // unique per show instance
+  id: string;
 }
 
-const SHOW_DELAY_MS = 3000;       // wait 3s after scroll starts before first popup
-const CYCLE_INTERVAL_MS = 8000;   // show a new pair every 8s
-const DISMISS_AFTER_MS = 6000;    // auto-dismiss after 6s if not clicked
+// ── Config ──────────────────────────────────────────────────────────────────
+const FIRST_SHOW_DELAY_MS = 5000;   // 5s after first scroll → show 1st ad
+const CYCLE_INTERVAL_MS = 120_000;  // 120s (2 min) between each subsequent ad
+const DISMISS_AFTER_MS = 8000;      // auto-dismiss after 8s
+
+// Module-level flag: survives re-renders & page navigation within the SPA
+// Resets only on full browser reload — prevents re-triggering when user
+// navigates Home → Products → Home etc.
+let sessionCycleStarted = false;
 
 const ProductPopupAd = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [activeAds, setActiveAds] = useState<PopupAd[]>([]);
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
-  const hasScrolled = useRef(false);
+  const hasScrolledRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const adIndexRef = useRef(0);
   const instanceRef = useRef(0);
 
-  // Fetch products once
+  // Fetch products once on mount
   useEffect(() => {
     supabase
       .from("products")
@@ -43,19 +48,22 @@ const ProductPopupAd = () => {
       });
   }, []);
 
-  // Watch for first scroll then start cycling
+  // Listen for first scroll — start cycle only once per full page session
   useEffect(() => {
     if (products.length === 0) return;
+    if (sessionCycleStarted) return; // already running from a previous mount
 
     const onScroll = () => {
-      if (!hasScrolled.current) {
-        hasScrolled.current = true;
-        setTimeout(startCycle, SHOW_DELAY_MS);
+      if (!hasScrolledRef.current) {
+        hasScrolledRef.current = true;
+        window.removeEventListener("scroll", onScroll);
+        setTimeout(startCycle, FIRST_SHOW_DELAY_MS);
       }
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products]);
 
   const showNextAds = () => {
@@ -71,32 +79,26 @@ const ProductPopupAd = () => {
       id: `left-${++instanceRef.current}`,
     };
 
-    // Only show right side if we have more than 1 product
-    const ads: PopupAd[] = products.length > 1
-      ? [
-          left,
-          {
-            product: products[idx2],
-            side: "right",
-            id: `right-${++instanceRef.current}`,
-          },
-        ]
-      : [left];
+    const ads: PopupAd[] =
+      products.length > 1
+        ? [left, { product: products[idx2], side: "right", id: `right-${++instanceRef.current}` }]
+        : [left];
 
     setActiveAds(ads);
 
-    // Auto dismiss after DISMISS_AFTER_MS
+    // Auto-dismiss
     setTimeout(() => {
       setActiveAds((prev) => prev.filter((a) => !ads.find((na) => na.id === a.id)));
     }, DISMISS_AFTER_MS);
   };
 
   const startCycle = () => {
+    sessionCycleStarted = true;
     showNextAds();
     timerRef.current = setInterval(showNextAds, CYCLE_INTERVAL_MS);
   };
 
-  // Cleanup
+  // Cleanup only when the whole app unmounts
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -106,7 +108,6 @@ const ProductPopupAd = () => {
   const dismiss = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setActiveAds((prev) => prev.filter((a) => a.id !== id));
-    setDismissed((prev) => new Set([...prev, id]));
   };
 
   const handleClick = (ad: PopupAd) => {
@@ -128,9 +129,7 @@ const ProductPopupAd = () => {
             [ad.side]: "1rem",
             zIndex: 50,
             width: "220px",
-            // Slide in from each side
             animation: `slideIn-${ad.side} 0.45s cubic-bezier(0.16, 1, 0.3, 1) both`,
-            cursor: "pointer",
             pointerEvents: "auto",
           }}
           className="cursor-none"
@@ -153,7 +152,6 @@ const ProductPopupAd = () => {
               boxShadow: "0 0 20px hsl(43,56%,30%,0.4), 0 4px 24px rgba(0,0,0,0.6)",
             }}
           >
-            {/* Product image as background with overlay */}
             <div className="relative h-28 overflow-hidden">
               <img
                 src={ad.product.public_url}
@@ -161,35 +159,22 @@ const ProductPopupAd = () => {
                 className="w-full h-full object-cover"
                 style={{ filter: "brightness(0.65) saturate(1.2)" }}
               />
-              {/* Gold gradient overlay */}
               <div
                 className="absolute inset-0"
-                style={{
-                  background:
-                    "linear-gradient(to top, hsl(20,10%,8%) 0%, transparent 55%)",
-                }}
+                style={{ background: "linear-gradient(to top, hsl(20,10%,8%) 0%, transparent 55%)" }}
               />
-
-              {/* "TAP TO VIEW" badge */}
               <div
                 className="absolute top-2 left-2 px-2 py-0.5 rounded text-[9px] uppercase tracking-widest font-body font-bold"
-                style={{
-                  background: "hsl(43,56%,52%)",
-                  color: "hsl(20,10%,6%)",
-                }}
+                style={{ background: "hsl(43,56%,52%)", color: "hsl(20,10%,6%)" }}
               >
                 Tap to view
               </div>
             </div>
 
-            {/* Product name */}
             <div className="px-3 py-2.5">
               <p
                 className="font-heading text-sm uppercase tracking-wide leading-tight"
-                style={{
-                  color: "hsl(43,56%,62%)",
-                  textShadow: "0 0 12px hsl(43,56%,40%)",
-                }}
+                style={{ color: "hsl(43,56%,62%)", textShadow: "0 0 12px hsl(43,56%,40%)" }}
               >
                 {ad.product.name}
               </p>
@@ -198,7 +183,6 @@ const ProductPopupAd = () => {
               </p>
             </div>
 
-            {/* Dismiss ✕ */}
             <button
               onClick={(e) => dismiss(ad.id, e)}
               className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center cursor-none"
