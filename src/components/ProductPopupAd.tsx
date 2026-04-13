@@ -17,26 +17,22 @@ interface PopupAd {
   id: string;
 }
 
-// ── Config ──────────────────────────────────────────────────────────────────
-const FIRST_SHOW_DELAY_MS = 5000;   // 5s after first scroll → show 1st ad
-const CYCLE_INTERVAL_MS = 120_000;  // 120s (2 min) between each subsequent ad
-const DISMISS_AFTER_MS = 8000;      // auto-dismiss after 8s
+const FIRST_SHOW_DELAY_MS = 5000;
+const CYCLE_INTERVAL_MS = 120_000;
+const DISMISS_AFTER_MS = 8000;
 
-// Module-level flag: survives re-renders & page navigation within the SPA
-// Resets only on full browser reload — prevents re-triggering when user
-// navigates Home → Products → Home etc.
-let sessionCycleStarted = false;
+// Persisted across full SPA lifetime in sessionStorage
+const SESSION_KEY = "svibe_ad_started";
 
 const ProductPopupAd = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [activeAds, setActiveAds] = useState<PopupAd[]>([]);
-  const hasScrolledRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const adIndexRef = useRef(0);
   const instanceRef = useRef(0);
+  const startedRef = useRef(false);
 
-  // Fetch products once on mount
   useEffect(() => {
     supabase
       .from("products")
@@ -48,57 +44,51 @@ const ProductPopupAd = () => {
       });
   }, []);
 
-  // Listen for first scroll — start cycle only once per full page session
   useEffect(() => {
     if (products.length === 0) return;
-    if (sessionCycleStarted) return; // already running from a previous mount
+
+    // Already started in this browser session — never run again
+    if (sessionStorage.getItem(SESSION_KEY)) return;
+    if (startedRef.current) return;
 
     const onScroll = () => {
-      if (!hasScrolledRef.current) {
-        hasScrolledRef.current = true;
-        window.removeEventListener("scroll", onScroll);
-        setTimeout(startCycle, FIRST_SHOW_DELAY_MS);
-      }
+      if (startedRef.current) return;
+      startedRef.current = true;
+      window.removeEventListener("scroll", onScroll);
+      setTimeout(startCycle, FIRST_SHOW_DELAY_MS);
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [products]);
 
-  const showNextAds = () => {
+  const showNextAd = () => {
     if (products.length === 0) return;
 
-    const idx1 = adIndexRef.current % products.length;
-    const idx2 = (adIndexRef.current + 1) % products.length;
-    adIndexRef.current = (adIndexRef.current + 2) % products.length;
+    // Show ONE ad on ONE side only (alternates left/right each time)
+    const idx = adIndexRef.current % products.length;
+    adIndexRef.current = (adIndexRef.current + 1) % products.length;
+    const side: "left" | "right" = instanceRef.current % 2 === 0 ? "left" : "right";
 
-    const left: PopupAd = {
-      product: products[idx1],
-      side: "left",
-      id: `left-${++instanceRef.current}`,
+    const ad: PopupAd = {
+      product: products[idx],
+      side,
+      id: `ad-${++instanceRef.current}`,
     };
 
-    const ads: PopupAd[] =
-      products.length > 1
-        ? [left, { product: products[idx2], side: "right", id: `right-${++instanceRef.current}` }]
-        : [left];
+    setActiveAds([ad]);
 
-    setActiveAds(ads);
-
-    // Auto-dismiss
     setTimeout(() => {
-      setActiveAds((prev) => prev.filter((a) => !ads.find((na) => na.id === a.id)));
+      setActiveAds((prev) => prev.filter((a) => a.id !== ad.id));
     }, DISMISS_AFTER_MS);
   };
 
   const startCycle = () => {
-    sessionCycleStarted = true;
-    showNextAds();
-    timerRef.current = setInterval(showNextAds, CYCLE_INTERVAL_MS);
+    sessionStorage.setItem(SESSION_KEY, "1");
+    showNextAd();
+    timerRef.current = setInterval(showNextAd, CYCLE_INTERVAL_MS);
   };
 
-  // Cleanup only when the whole app unmounts
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
