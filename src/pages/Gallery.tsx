@@ -1,14 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ImageOff, ShieldCheck, Play } from "lucide-react";
+import { ArrowLeft, ImageOff, Play, Plus, Trash2, FolderPlus, X } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Modal from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { Instagram, Mail, MapPin } from "lucide-react";
 
-const INSTAGRAM_URL =
-  "https://www.instagram.com/siddharth_vibe_events?igsh=aTExYmU5ZWc5NjBt";
+const INSTAGRAM_URL = "https://www.instagram.com/siddharth_vibe_events?igsh=aTExYmU5ZWc5NjBt";
 
 interface GalleryMedia {
   id: string;
@@ -44,7 +43,6 @@ const VideoThumbnail = ({ src }: { src: string }) => {
     video.muted = true;
     video.preload = "metadata";
     video.src = src;
-
     const capture = () => {
       try {
         const canvas = canvasRef.current;
@@ -54,11 +52,8 @@ const VideoThumbnail = ({ src }: { src: string }) => {
         const ctx = canvas.getContext("2d");
         ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
         setReady(true);
-      } catch {
-        setError(true);
-      }
+      } catch { setError(true); }
     };
-
     video.addEventListener("loadeddata", () => {
       video.currentTime = Math.min(1, video.duration * 0.1 || 1);
     });
@@ -76,10 +71,8 @@ const VideoThumbnail = ({ src }: { src: string }) => {
       />
       {!ready && (
         <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-          {error
-            ? <ImageOff size={20} className="text-muted-foreground" />
-            : <div className="w-5 h-5 rounded-full border-2 border-[hsl(43,56%,52%)] border-t-transparent animate-spin" />
-          }
+          {error ? <ImageOff size={20} className="text-muted-foreground" /> :
+            <div className="w-5 h-5 rounded-full border-2 border-[hsl(43,56%,52%)] border-t-transparent animate-spin" />}
         </div>
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -98,8 +91,9 @@ const MediaItem = ({ item, onClick }: { item: GalleryMedia; onClick: () => void 
 
   return (
     <GoldFrame>
+      {/* ✅ Fixed: 5:7 aspect ratio */}
       <div
-        className="aspect-[4/3] cursor-none overflow-hidden bg-secondary flex items-center justify-center relative"
+        className="aspect-[5/7] cursor-none overflow-hidden bg-secondary flex items-center justify-center relative"
         onClick={onClick}
       >
         {isVideo ? (
@@ -129,6 +123,117 @@ const MediaItem = ({ item, onClick }: { item: GalleryMedia; onClick: () => void 
   );
 };
 
+// ── Admin Cluster Manager ────────────────────────────────────────────────────
+const AdminClusterManager = ({
+  groups,
+  media,
+  onGroupsChange,
+}: {
+  groups: GalleryGroup[];
+  media: GalleryMedia[];
+  onGroupsChange: () => void;
+}) => {
+  const [showForm, setShowForm] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const showMsg = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleCreate = async () => {
+    if (!newGroupName.trim()) return;
+    setSaving(true);
+    const slug = `${newGroupName.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}-${Date.now()}`;
+    const { error } = await supabase.from("gallery_groups").insert({
+      name: newGroupName.trim(),
+      slug,
+      sort_order: groups.length,
+    });
+    setSaving(false);
+    if (error) { showMsg("Failed to create group."); return; }
+    showMsg(`Group "${newGroupName.trim()}" created!`);
+    setNewGroupName("");
+    setShowForm(false);
+    onGroupsChange();
+  };
+
+  const handleDelete = async (group: GalleryGroup) => {
+    if (!confirm(`Delete group "${group.name}"? Media will become ungrouped.`)) return;
+    const { error } = await supabase.from("gallery_groups").delete().eq("id", group.id);
+    if (error) { showMsg("Failed to delete."); return; }
+    showMsg("Group deleted.");
+    onGroupsChange();
+  };
+
+  return (
+    <div className="bg-card border gold-border rounded-lg p-5 gold-glow mb-8">
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-lg bg-card border gold-border text-sm font-body gold-text shadow-xl">
+          {toast}
+        </div>
+      )}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-heading text-lg gold-text">Manage Clusters</h2>
+        <button
+          onClick={() => setShowForm((v) => !v)}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded text-xs font-body hover:opacity-90 cursor-none"
+        >
+          <FolderPlus size={13} /> New Cluster
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="flex gap-3 mb-4">
+          <input
+            type="text"
+            placeholder="Cluster name (e.g. Wedding Events)"
+            value={newGroupName}
+            onChange={(e) => setNewGroupName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+            className="flex-1 px-4 py-2.5 bg-secondary border gold-border rounded text-sm font-body gold-text placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors cursor-none"
+          />
+          <button
+            onClick={handleCreate}
+            disabled={saving || !newGroupName.trim()}
+            className="px-5 py-2 bg-primary text-primary-foreground rounded text-sm font-body hover:opacity-90 cursor-none disabled:opacity-50"
+          >
+            {saving ? "..." : "Create"}
+          </button>
+          <button
+            onClick={() => { setShowForm(false); setNewGroupName(""); }}
+            className="px-3 py-2 border gold-border rounded text-sm gold-text hover:bg-secondary cursor-none"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {groups.length === 0 ? (
+        <p className="text-sm text-muted-foreground font-body">No clusters yet. Create one to organise your gallery.</p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {groups.map((g) => (
+            <div key={g.id} className="flex items-center gap-2 px-3 py-1.5 bg-secondary border gold-border rounded-full text-xs font-body gold-text">
+              {g.name}
+              <span className="text-muted-foreground">({media.filter((m) => m.group_id === g.id).length})</span>
+              <button
+                onClick={() => handleDelete(g)}
+                className="text-destructive/60 hover:text-destructive cursor-none transition-colors"
+              >
+                <X size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Gallery Page ──────────────────────────────────────────────────────────────
 const Gallery = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
@@ -150,18 +255,27 @@ const Gallery = () => {
     setFeedbackOpen(true);
   };
 
+  const loadGroups = async () => {
+    const { data } = await supabase
+      .from("gallery_groups")
+      .select("id, name, sort_order")
+      .order("sort_order", { ascending: true });
+    setGroups(data || []);
+  };
+
+  const loadMedia = async () => {
+    const { data, error: err } = await supabase
+      .from("gallery_media")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (err) setError("Failed to load gallery.");
+    else setMedia(data || []);
+    setLoading(false);
+  };
+
   useEffect(() => {
     supabase.from("page_views").insert({ page: "gallery" });
-
-    Promise.all([
-      supabase.from("gallery_media").select("*").order("created_at", { ascending: false }),
-      supabase.from("gallery_groups").select("id, name, sort_order").order("sort_order", { ascending: true }),
-    ]).then(([mediaRes, groupsRes]) => {
-      if (mediaRes.error) setError("Failed to load gallery.");
-      else setMedia(mediaRes.data || []);
-      setGroups(groupsRes.data || []);
-      setLoading(false);
-    });
+    Promise.all([loadMedia(), loadGroups()]);
   }, []);
 
   useEffect(() => {
@@ -177,12 +291,10 @@ const Gallery = () => {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Filtered media based on active group tab
   const filteredMedia = activeGroup === "all"
     ? media
     : media.filter((m) => m.group_id === activeGroup);
 
-  // Only show group tabs if there are groups with media
   const groupsWithMedia = groups.filter((g) => media.some((m) => m.group_id === g.id));
 
   return (
@@ -203,30 +315,27 @@ const Gallery = () => {
             >
               <ArrowLeft size={16} /> Back to Home
             </button>
-            {isAdmin && (
-              <button
-                onClick={() => navigate("/admin")}
-                className="flex items-center gap-2 px-4 py-2 border gold-border rounded text-xs font-body gold-text hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all cursor-none"
-              >
-                <ShieldCheck size={14} /> Admin Panel
-              </button>
-            )}
           </div>
 
           <h1 className="font-heading text-5xl gold-text text-center mb-4">Gallery</h1>
-          <p className="text-center text-muted-foreground font-body mb-8">
-            Moments captured in elegance
-          </p>
+          <p className="text-center text-muted-foreground font-body mb-8">Moments captured in elegance</p>
 
-          {/* Group filter tabs — only shown if groups exist */}
+          {/* ✅ Admin Cluster Manager — visible only to admin */}
+          {isAdmin && (
+            <AdminClusterManager
+              groups={groups}
+              media={media}
+              onGroupsChange={() => { loadGroups(); loadMedia(); }}
+            />
+          )}
+
+          {/* Group filter tabs */}
           {!loading && groupsWithMedia.length > 0 && (
             <div className="flex gap-2 flex-wrap justify-center mb-10">
               <button
                 onClick={() => setActiveGroup("all")}
                 className={`px-5 py-2 rounded-full text-xs font-body tracking-wider uppercase transition-all cursor-none
-                  ${activeGroup === "all"
-                    ? "bg-primary text-primary-foreground"
-                    : "border gold-border gold-text opacity-60 hover:opacity-100"}`}
+                  ${activeGroup === "all" ? "bg-primary text-primary-foreground" : "border gold-border gold-text opacity-60 hover:opacity-100"}`}
               >
                 All ({media.length})
               </button>
@@ -235,9 +344,7 @@ const Gallery = () => {
                   key={g.id}
                   onClick={() => setActiveGroup(g.id)}
                   className={`px-5 py-2 rounded-full text-xs font-body tracking-wider uppercase transition-all cursor-none
-                    ${activeGroup === g.id
-                      ? "bg-primary text-primary-foreground"
-                      : "border gold-border gold-text opacity-60 hover:opacity-100"}`}
+                    ${activeGroup === g.id ? "bg-primary text-primary-foreground" : "border gold-border gold-text opacity-60 hover:opacity-100"}`}
                 >
                   {g.name} ({media.filter((m) => m.group_id === g.id).length})
                 </button>
@@ -251,20 +358,11 @@ const Gallery = () => {
             </div>
           )}
 
-          {error && (
-            <div className="text-center py-20 text-muted-foreground font-body">{error}</div>
-          )}
+          {error && <div className="text-center py-20 text-muted-foreground font-body">{error}</div>}
 
           {!loading && !error && filteredMedia.length === 0 && (
             <div className="text-center py-20 text-muted-foreground font-body">
-              {activeGroup === "all" ? "No media uploaded yet." : "No media in this group yet."}
-              {isAdmin && activeGroup === "all" && (
-                <p className="mt-2 text-sm">
-                  <button onClick={() => navigate("/admin")} className="gold-text underline cursor-none">
-                    Go to Admin Panel
-                  </button>{" "}to upload photos & videos.
-                </p>
-              )}
+              {activeGroup === "all" ? "No media uploaded yet." : "No media in this cluster yet."}
             </div>
           )}
 
@@ -278,6 +376,7 @@ const Gallery = () => {
         </div>
       </div>
 
+      {/* Lightbox */}
       {selectedMedia && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-background/95 backdrop-blur-sm cursor-none"
@@ -322,19 +421,26 @@ const Gallery = () => {
           </div>
           <div className="flex items-center gap-3">
             <Mail size={18} className="gold-text shrink-0" />
-            <a href="mailto:siddharthvibe.events@gmail.com" className="text-secondary-foreground hover:text-primary transition-colors cursor-none">
+            <button
+              onClick={() => { window.location.href = "mailto:siddharthvibe.events@gmail.com"; }}
+              className="text-secondary-foreground hover:text-primary transition-colors cursor-none"
+            >
               siddharthvibe.events@gmail.com
-            </a>
+            </button>
           </div>
           <div className="flex gap-3 pt-2">
-            <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-secondary rounded font-medium text-secondary-foreground hover:bg-muted transition-colors cursor-none">
+            <button
+              onClick={() => window.open(INSTAGRAM_URL, "_blank")}
+              className="flex items-center gap-2 px-4 py-2 bg-secondary rounded font-medium text-secondary-foreground hover:bg-muted transition-colors cursor-none"
+            >
               <Instagram size={16} /> Instagram
-            </a>
-            <a href="mailto:siddharthvibe.events@gmail.com"
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded font-medium hover:opacity-90 transition-opacity cursor-none">
+            </button>
+            <button
+              onClick={() => { window.location.href = "mailto:siddharthvibe.events@gmail.com"; }}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded font-medium hover:opacity-90 transition-opacity cursor-none"
+            >
               <Mail size={16} /> Email
-            </a>
+            </button>
           </div>
         </div>
       </Modal>
