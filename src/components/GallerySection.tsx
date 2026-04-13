@@ -18,7 +18,6 @@ const GoldFrame = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-// Generates a thumbnail from a video URL by loading it into an offscreen video element
 const VideoThumbnail = ({ src }: { src: string }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
@@ -30,7 +29,6 @@ const VideoThumbnail = ({ src }: { src: string }) => {
     video.muted = true;
     video.preload = "metadata";
     video.src = src;
-
     const capture = () => {
       try {
         const canvas = canvasRef.current;
@@ -40,47 +38,30 @@ const VideoThumbnail = ({ src }: { src: string }) => {
         const ctx = canvas.getContext("2d");
         ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
         setReady(true);
-      } catch {
-        setError(true);
-      }
+      } catch { setError(true); }
     };
-
     video.addEventListener("loadeddata", () => {
-      // Seek to 1s (or 10% of duration) to get a real frame
       video.currentTime = Math.min(1, video.duration * 0.1 || 1);
     });
-
     video.addEventListener("seeked", capture);
     video.addEventListener("error", () => setError(true));
-
     video.load();
-
-    return () => {
-      video.src = "";
-    };
+    return () => { video.src = ""; };
   }, [src]);
 
   return (
     <div className="w-full h-full relative">
-      {/* Canvas thumbnail — hidden until ready */}
       <canvas
         ref={canvasRef}
         className={`w-full h-full object-cover transition-opacity duration-300 ${ready ? "opacity-100" : "opacity-0"}`}
         style={{ position: "absolute", inset: 0 }}
       />
-
-      {/* Fallback dark background shown while loading or on error */}
       {!ready && (
         <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-          {error ? (
-            <ImageOff size={20} className="text-muted-foreground" />
-          ) : (
-            <div className="w-5 h-5 rounded-full border-2 border-[hsl(43,56%,52%)] border-t-transparent animate-spin" />
-          )}
+          {error ? <ImageOff size={20} className="text-muted-foreground" /> :
+            <div className="w-5 h-5 rounded-full border-2 border-[hsl(43,56%,52%)] border-t-transparent animate-spin" />}
         </div>
       )}
-
-      {/* Play icon overlay — always shown on video */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-10 h-10 rounded-full bg-black/50 flex items-center justify-center border border-[hsl(43,56%,52%)]/60">
           <Play size={16} className="text-[hsl(43,56%,62%)] ml-0.5" fill="currentColor" />
@@ -96,7 +77,8 @@ const PreviewItem = ({ item }: { item: GalleryMedia }) => {
 
   return (
     <GoldFrame>
-      <div className="aspect-[4/3] overflow-hidden bg-secondary flex items-center justify-center relative">
+      {/* ✅ Fixed: 5:7 aspect ratio */}
+      <div className="aspect-[5/7] overflow-hidden bg-secondary flex items-center justify-center relative">
         {isVideo ? (
           <VideoThumbnail src={item.public_url} />
         ) : imgError ? (
@@ -127,7 +109,7 @@ const GallerySection = () => {
       .from("gallery_media")
       .select("id, file_name, public_url, mime_type, caption")
       .order("created_at", { ascending: false })
-      .limit(6) // Only first 6 items
+      .limit(6)
       .then(({ data }) => {
         setPreviews(data || []);
         setLoading(false);
@@ -138,30 +120,25 @@ const GallerySection = () => {
   return (
     <section id="gallery" className="py-24 px-6">
       <div className="max-w-6xl mx-auto">
-        <h2 className="font-heading text-4xl sm:text-5xl text-center gold-text mb-4">
-          Gallery
-        </h2>
-        <p className="text-center text-muted-foreground mb-16 font-body">
-          Moments captured in elegance
-        </p>
+        <h2 className="font-heading text-4xl sm:text-5xl text-center gold-text mb-4">Gallery</h2>
+        <p className="text-center text-muted-foreground mb-16 font-body">Moments captured in elegance</p>
 
         {loading ? (
           <div className="flex justify-center py-16">
             <div className="w-8 h-8 rounded-full border-2 border-[hsl(43,56%,52%)] border-t-transparent animate-spin" />
           </div>
         ) : previews.length === 0 ? (
-          // Placeholder: strictly 2 rows × 3 cols = 6 cells
           <div className="grid grid-cols-3 gap-5 mb-12">
             {Array.from({ length: 6 }).map((_, i) => (
               <GoldFrame key={i}>
-                <div className="aspect-[4/3] bg-card flex items-center justify-center">
+                {/* ✅ Fixed: 5:7 aspect ratio */}
+                <div className="aspect-[5/7] bg-card flex items-center justify-center">
                   <span className="text-muted-foreground text-xs font-body text-center px-4">Coming soon</span>
                 </div>
               </GoldFrame>
             ))}
           </div>
         ) : (
-          // Strictly 2 rows × 3 cols — slice to max 6 items
           <div className="grid grid-cols-3 gap-5 mb-12">
             {previews.slice(0, 6).map((item) => (
               <PreviewItem key={item.id} item={item} />
