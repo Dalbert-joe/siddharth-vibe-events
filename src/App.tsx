@@ -22,8 +22,13 @@ const queryClient = new QueryClient({
 
 const AdminRoute = () => {
   const { user, isAdmin, loading } = useAuth();
-  if (loading) return null;
-  if (!user || !isAdmin) return <Navigate to="/" replace />;
+  if (loading) return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="w-10 h-10 rounded-full border-2 border-[hsl(43,56%,52%)] border-t-transparent animate-spin" />
+    </div>
+  );
+  if (!user) return <Navigate to="/login" state={{ returnTo: "/admin" }} replace />;
+  if (!isAdmin) return <Navigate to="/" replace />;
   return <AdminPage />;
 };
 
