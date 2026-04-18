@@ -31,13 +31,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const checkAdmin = async (email: string | undefined) => {
-    if (!email) { setIsAdmin(false); return; }
-    const { data } = await supabase
-      .from("admins")
-      .select("email")
-      .eq("email", email)
-      .maybeSingle();
-    setIsAdmin(!!data);
+    if (!email) {
+      setIsAdmin(false);
+      return;
+    }
+    // Direct email check — no DB query needed, avoids RLS timing issues
+    setIsAdmin(email === "siddharthvibe.events@gmail.com");
   };
 
   useEffect(() => {
