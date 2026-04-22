@@ -384,7 +384,7 @@ const Gallery = () => {
     ? media
     : media.filter((m) => m.group_id === activeGroup);
 
-  const groupsWithMedia = groups.filter((g) => media.some((m) => m.group_id === g.id));
+  const groupsWithMedia = groups.filter((g) => g.slug !== "general");
 
   return (
     <div className="min-h-screen bg-background cursor-none">
