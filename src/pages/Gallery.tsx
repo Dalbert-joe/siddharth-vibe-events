@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ImageOff, Play, Plus, Trash2, FolderPlus, X } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, ImageOff, Play, FolderPlus, X, MessageSquare } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Modal from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,7 +22,16 @@ interface GalleryMedia {
 interface GalleryGroup {
   id: string;
   name: string;
+  slug: string;
   sort_order: number;
+}
+
+interface FeedbackItem {
+  id: string;
+  name: string;
+  phone: string;
+  message: string;
+  created_at: string;
 }
 
 const GoldFrame = ({ children }: { children: React.ReactNode }) => (
@@ -71,8 +80,9 @@ const VideoThumbnail = ({ src }: { src: string }) => {
       />
       {!ready && (
         <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-          {error ? <ImageOff size={20} className="text-muted-foreground" /> :
-            <div className="w-5 h-5 rounded-full border-2 border-[hsl(43,56%,52%)] border-t-transparent animate-spin" />}
+          {error
+            ? <ImageOff size={20} className="text-muted-foreground" />
+            : <div className="w-5 h-5 rounded-full border-2 border-[hsl(43,56%,52%)] border-t-transparent animate-spin" />}
         </div>
       )}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -91,7 +101,6 @@ const MediaItem = ({ item, onClick }: { item: GalleryMedia; onClick: () => void 
 
   return (
     <GoldFrame>
-      {/* ✅ Fixed: 5:7 aspect ratio */}
       <div
         className="aspect-[5/7] cursor-none overflow-hidden bg-secondary flex items-center justify-center relative"
         onClick={onClick}
@@ -123,7 +132,7 @@ const MediaItem = ({ item, onClick }: { item: GalleryMedia; onClick: () => void 
   );
 };
 
-// ── Admin Cluster Manager ────────────────────────────────────────────────────
+// ── Admin Cluster Manager ─────────────────────────────────────────────────────
 const AdminClusterManager = ({
   groups,
   media,
@@ -153,18 +162,19 @@ const AdminClusterManager = ({
       sort_order: groups.length,
     });
     setSaving(false);
-    if (error) { showMsg("Failed to create group."); return; }
-    showMsg(`Group "${newGroupName.trim()}" created!`);
+    if (error) { showMsg("Failed to create cluster."); return; }
+    showMsg(`Cluster "${newGroupName.trim()}" created!`);
     setNewGroupName("");
     setShowForm(false);
     onGroupsChange();
   };
 
   const handleDelete = async (group: GalleryGroup) => {
-    if (!confirm(`Delete group "${group.name}"? Media will become ungrouped.`)) return;
+    if (group.slug === "general") { showMsg("Cannot delete the General cluster."); return; }
+    if (!confirm(`Delete cluster "${group.name}"? Media will become ungrouped.`)) return;
     const { error } = await supabase.from("gallery_groups").delete().eq("id", group.id);
     if (error) { showMsg("Failed to delete."); return; }
-    showMsg("Group deleted.");
+    showMsg("Cluster deleted.");
     onGroupsChange();
   };
 
@@ -212,19 +222,21 @@ const AdminClusterManager = ({
       )}
 
       {groups.length === 0 ? (
-        <p className="text-sm text-muted-foreground font-body">No clusters yet. Create one to organise your gallery.</p>
+        <p className="text-sm text-muted-foreground font-body">No clusters yet.</p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {groups.map((g) => (
             <div key={g.id} className="flex items-center gap-2 px-3 py-1.5 bg-secondary border gold-border rounded-full text-xs font-body gold-text">
               {g.name}
               <span className="text-muted-foreground">({media.filter((m) => m.group_id === g.id).length})</span>
-              <button
-                onClick={() => handleDelete(g)}
-                className="text-destructive/60 hover:text-destructive cursor-none transition-colors"
-              >
-                <X size={11} />
-              </button>
+              {g.slug !== "general" && (
+                <button
+                  onClick={() => handleDelete(g)}
+                  className="text-destructive/60 hover:text-destructive cursor-none transition-colors"
+                >
+                  <X size={11} />
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -233,10 +245,76 @@ const AdminClusterManager = ({
   );
 };
 
+// ── Public Feedback Panel ─────────────────────────────────────────────────────
+const PublicFeedbackPanel = () => {
+  const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase
+      .from("feedback")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        setFeedbackList(data || []);
+        setLoading(false);
+      });
+  }, []);
+
+  return (
+    <section className="py-16 px-6 border-t gold-border">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center gap-3 mb-10 justify-center">
+          <MessageSquare size={20} className="gold-text" />
+          <h2 className="font-heading text-3xl gold-text">What People Say</h2>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-8 h-8 rounded-full border-2 border-[hsl(43,56%,52%)] border-t-transparent animate-spin" />
+          </div>
+        ) : feedbackList.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground font-body">
+            No feedback yet. Be the first to share your experience!
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {feedbackList.map((fb) => (
+              <div
+                key={fb.id}
+                className="bg-card border gold-border rounded-lg p-5 gold-glow hover:gold-glow-hover transition-all duration-300"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="font-heading text-sm gold-text font-bold">{fb.name}</p>
+                    <p className="text-[10px] text-muted-foreground font-body mt-0.5">{fb.phone}</p>
+                  </div>
+                  <span className="text-[9px] text-muted-foreground font-body text-right shrink-0 ml-2">
+                    {new Date(fb.created_at).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+                <div className="border-t gold-border pt-3">
+                  <p className="text-sm font-body text-secondary-foreground leading-relaxed">{fb.message}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
+
 // ── Gallery Page ──────────────────────────────────────────────────────────────
 const Gallery = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, isAdmin } = useAuth();
+
   const [media, setMedia] = useState<GalleryMedia[]>([]);
   const [groups, setGroups] = useState<GalleryGroup[]>([]);
   const [activeGroup, setActiveGroup] = useState<string>("all");
@@ -258,9 +336,9 @@ const Gallery = () => {
   const loadGroups = async () => {
     const { data } = await supabase
       .from("gallery_groups")
-      .select("id, name, sort_order")
+      .select("id, name, slug, sort_order")
       .order("sort_order", { ascending: true });
-    setGroups(data || []);
+    return data || [];
   };
 
   const loadMedia = async () => {
@@ -269,13 +347,24 @@ const Gallery = () => {
       .select("*")
       .order("created_at", { ascending: false });
     if (err) setError("Failed to load gallery.");
-    else setMedia(data || []);
-    setLoading(false);
+    return data || [];
   };
 
   useEffect(() => {
     supabase.from("page_views").insert({ page: "gallery" });
-    Promise.all([loadMedia(), loadGroups()]);
+
+    Promise.all([loadMedia(), loadGroups()]).then(([mediaData, groupsData]) => {
+      setMedia(mediaData);
+      setGroups(groupsData);
+      setLoading(false);
+
+      // ✅ Auto-select cluster from URL ?cluster=slug
+      const clusterSlug = searchParams.get("cluster");
+      if (clusterSlug) {
+        const matched = groupsData.find((g) => g.slug === clusterSlug);
+        if (matched) setActiveGroup(matched.id);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -305,9 +394,8 @@ const Gallery = () => {
         onOpenFeedback={handleOpenFeedback}
       />
 
-      <div className="pt-24 pb-16 px-6">
+      <div className="pt-24 pb-8 px-6">
         <div className="max-w-6xl mx-auto">
-
           <div className="flex items-center justify-between mb-10">
             <button
               onClick={() => navigate("/")}
@@ -320,12 +408,17 @@ const Gallery = () => {
           <h1 className="font-heading text-5xl gold-text text-center mb-4">Gallery</h1>
           <p className="text-center text-muted-foreground font-body mb-8">Moments captured in elegance</p>
 
-          {/* ✅ Admin Cluster Manager — visible only to admin */}
+          {/* Admin Cluster Manager — admin only */}
           {isAdmin && (
             <AdminClusterManager
               groups={groups}
               media={media}
-              onGroupsChange={() => { loadGroups(); loadMedia(); }}
+              onGroupsChange={() => {
+                Promise.all([loadMedia(), loadGroups()]).then(([m, g]) => {
+                  setMedia(m);
+                  setGroups(g);
+                });
+              }}
             />
           )}
 
@@ -367,7 +460,7 @@ const Gallery = () => {
           )}
 
           {filteredMedia.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 pb-16">
               {filteredMedia.map((item) => (
                 <MediaItem key={item.id} item={item} onClick={() => setSelectedMedia(item)} />
               ))}
@@ -375,6 +468,9 @@ const Gallery = () => {
           )}
         </div>
       </div>
+
+      {/* ✅ Public feedback panel — visible to everyone */}
+      <PublicFeedbackPanel />
 
       {/* Lightbox */}
       {selectedMedia && (
