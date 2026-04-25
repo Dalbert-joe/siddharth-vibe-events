@@ -287,7 +287,6 @@ const PublicFeedbackPanel = () => {
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <p className="font-heading text-sm gold-text font-bold">{fb.name}</p>
-                    <p className="text-[10px] text-muted-foreground font-body mt-0.5">{fb.phone}</p>
                   </div>
                   <span className="text-[9px] text-muted-foreground font-body text-right shrink-0 ml-2">
                     {new Date(fb.created_at).toLocaleDateString("en-IN", {
