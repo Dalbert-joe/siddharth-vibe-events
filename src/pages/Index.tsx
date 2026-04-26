@@ -12,9 +12,76 @@ import Footer from "@/components/Footer";
 import Modal from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { Instagram, Mail, MapPin } from "lucide-react";
+import { Instagram, Mail, MapPin, MessageSquare } from "lucide-react";
 
 const INSTAGRAM_URL = "https://www.instagram.com/siddharth_vibe_events?igsh=aTExYmU5ZWc5NjBt";
+
+interface FeedbackItem {
+  id: string;
+  name: string;
+  message: string;
+  created_at: string;
+}
+
+const PublicFeedbackPanel = () => {
+  const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase
+      .from("feedback")
+      .select("id, name, message, created_at")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        setFeedbackList(data || []);
+        setLoading(false);
+      });
+  }, []);
+
+  return (
+    <section className="py-16 px-6 border-t gold-border">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center gap-3 mb-10 justify-center">
+          <MessageSquare size={20} className="gold-text" />
+          <h2 className="font-heading text-3xl gold-text">What People Say</h2>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="w-8 h-8 rounded-full border-2 border-[hsl(43,56%,52%)] border-t-transparent animate-spin" />
+          </div>
+        ) : feedbackList.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground font-body">
+            No feedback yet. Be the first to share your experience!
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {feedbackList.map((fb) => (
+              <div
+                key={fb.id}
+                className="bg-card border gold-border rounded-lg p-5 gold-glow hover:gold-glow-hover transition-all duration-300"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <p className="font-heading text-sm gold-text font-bold">{fb.name}</p>
+                  <span className="text-[9px] text-muted-foreground font-body shrink-0 ml-2">
+                    {new Date(fb.created_at).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+                <div className="border-t gold-border pt-3">
+                  <p className="text-sm font-body text-secondary-foreground leading-relaxed">{fb.message}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
 
 const Index = () => {
   const navigate = useNavigate();
@@ -29,7 +96,6 @@ const Index = () => {
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "success" | "error">("idle");
 
-  // Track page view
   useEffect(() => {
     supabase.from("page_views").insert({ page: "home" });
   }, []);
@@ -79,18 +145,18 @@ const Index = () => {
       <HeroSection />
       <EventCards />
       <AreaRestrictions />
-
-      {/* Products preview section with mascot sticker */}
       <ProductsHomeSection />
-
       <GallerySection />
+
+      {/* ✅ What People Say — above footer */}
+      <PublicFeedbackPanel />
+
       <Footer
         onOpenAbout={() => setAboutOpen(true)}
         onOpenSupport={() => setSupportOpen(true)}
         onOpenFeedback={handleOpenFeedback}
       />
 
-      {/* Side pop-up product ads — appear while scrolling */}
       <ProductPopupAd />
 
       <Modal open={aboutOpen} onClose={() => setAboutOpen(false)} title="About Us">
