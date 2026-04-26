@@ -10,6 +10,7 @@ interface Event3DModalProps {
     title: string;
     description: string;
     services: string[];
+    gallerySlug: string;
   };
   onClose: () => void;
 }
@@ -58,7 +59,12 @@ const Event3DModal = ({ event, onClose }: Event3DModalProps) => {
 
   const handleViewGallery = () => {
     onClose();
-    navigate("/gallery");
+    navigate(`/gallery?cluster=${event.gallerySlug}`);
+  };
+
+  const handleServiceClick = () => {
+    onClose();
+    navigate(`/gallery?cluster=${event.gallerySlug}`);
   };
 
   return (
@@ -94,11 +100,18 @@ const Event3DModal = ({ event, onClose }: Event3DModalProps) => {
         {/* Scrollable content */}
         <div className="overflow-y-auto px-8 pb-8 flex-1 min-h-0">
           <p className="text-muted-foreground font-body text-sm mb-6 leading-relaxed">{event.description}</p>
+
+          {/* Services list — each item clickable */}
           <ul className="space-y-3">
             {event.services.map((service, idx) => (
-              <li key={idx} className="flex items-start gap-3 font-body text-sm text-secondary-foreground">
-                <span className="gold-text mt-1 shrink-0 text-xs">◆</span>
-                <span>{service}</span>
+              <li
+                key={idx}
+                onClick={handleServiceClick}
+                className="flex items-start gap-3 font-body text-sm text-secondary-foreground cursor-none hover:gold-text hover:opacity-80 transition-opacity group"
+                title="View in Gallery"
+              >
+                <span className="gold-text mt-1 shrink-0 text-xs group-hover:scale-125 transition-transform">◆</span>
+                <span className="group-hover:text-[hsl(43,56%,62%)] transition-colors">{service}</span>
               </li>
             ))}
           </ul>
@@ -118,7 +131,7 @@ const Event3DModal = ({ event, onClose }: Event3DModalProps) => {
               Book Now
             </button>
 
-            {/* View Gallery → /gallery */}
+            {/* View Gallery → respective cluster */}
             <button
               onClick={handleViewGallery}
               className="cursor-none flex items-center gap-2 px-6 py-3 rounded-lg font-heading text-sm tracking-wide border gold-border gold-text hover:bg-primary/10 hover:scale-105 transition-all duration-300 hover:shadow-[0_0_20px_hsl(var(--gold)/0.2)]"
