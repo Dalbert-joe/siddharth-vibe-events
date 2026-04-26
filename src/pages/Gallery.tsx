@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ImageOff, Play, FolderPlus, X, MessageSquare } from "lucide-react";
+import { ArrowLeft, ImageOff, Play, FolderPlus, X } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Modal from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -468,8 +468,6 @@ const Gallery = () => {
         </div>
       </div>
 
-      {/* ✅ Public feedback panel — visible to everyone */}
-      <PublicFeedbackPanel />
 
       {/* Lightbox */}
       {selectedMedia && (
