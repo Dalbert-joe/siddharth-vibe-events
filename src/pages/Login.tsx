@@ -132,7 +132,7 @@ const Login = () => {
         </div>
 
         <p className="text-center text-[10px] text-muted-foreground/40 mt-6 font-body">
-          Designed by Dalbert Joe
+          Designed by 2MenDevs
         </p>
       </div>
     </div>
