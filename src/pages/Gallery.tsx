@@ -454,7 +454,7 @@ const Gallery = () => {
 
           {!loading && !error && filteredMedia.length === 0 && (
             <div className="text-center py-20 text-muted-foreground font-body">
-              {activeGroup === "all" ? "No media uploaded yet." : "No media in this cluster yet."}
+              {activeGroup === "all" ? "No media uploaded yet." : "📁 Folder is empty"}
             </div>
           )}
 
