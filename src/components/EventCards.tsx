@@ -1,5 +1,4 @@
 import { useState, lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
 
 const Event3DModal = lazy(() => import("@/components/Event3DModal"));
 
@@ -104,14 +103,8 @@ const eventCategories: EventCategory[] = [
 ];
 
 const EventCards = () => {
-  const navigate = useNavigate();
   const [flipped, setFlipped] = useState<number | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventCategory | null>(null);
-
-  const handleViewGallery = (e: React.MouseEvent, slug: string) => {
-    e.stopPropagation();
-    navigate(`/gallery?cluster=${slug}`);
-  };
 
   return (
     <>
@@ -133,15 +126,9 @@ const EventCards = () => {
                 <div
                   className={`relative w-full h-full transition-transform duration-700 preserve-3d ${flipped === i ? "rotate-y-180" : ""}`}
                 >
-                  {/* Front */}
-                  <div className="absolute inset-0 backface-hidden bg-card border gold-border rounded-lg flex flex-col items-center justify-center gold-glow gold-glow-hover gold-border-hover transition-all duration-300 p-4 gap-3">
+                  {/* Front — no View Gallery button */}
+                  <div className="absolute inset-0 backface-hidden bg-card border gold-border rounded-lg flex items-center justify-center gold-glow gold-glow-hover gold-border-hover transition-all duration-300 p-4">
                     <h3 className="font-heading text-lg sm:text-xl gold-text text-center leading-snug">{event.title}</h3>
-                    <button
-                      onClick={(e) => handleViewGallery(e, event.gallerySlug)}
-                      className="text-[10px] font-body uppercase tracking-widest gold-text opacity-50 hover:opacity-100 border-b border-[hsl(43,56%,52%,0.3)] hover:border-[hsl(43,56%,52%)] transition-all pb-0.5 cursor-none"
-                    >
-                      View Gallery →
-                    </button>
                   </div>
                   {/* Back */}
                   <div className="absolute inset-0 backface-hidden rotate-y-180 bg-card border gold-border rounded-lg flex items-center justify-center p-6 gold-glow">
