@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ImageOff, Play, FolderPlus, X } from "lucide-react";
+import { ArrowLeft, ImageOff, Play, FolderPlus, X, MessageSquare } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Modal from "@/components/Modal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -324,6 +324,9 @@ const Gallery = () => {
   const [supportOpen, setSupportOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
+  // Clusters are hidden by default; toggled via the bottom button
+  const [showClusters, setShowClusters] = useState(false);
+
   const handleOpenFeedback = () => {
     if (!user) {
       navigate("/login", { state: { returnTo: "/gallery", openFeedback: true } });
@@ -357,11 +360,14 @@ const Gallery = () => {
       setGroups(groupsData);
       setLoading(false);
 
-      // ✅ Auto-select cluster from URL ?cluster=slug
+      // Auto-select cluster from URL ?cluster=slug
       const clusterSlug = searchParams.get("cluster");
       if (clusterSlug) {
         const matched = groupsData.find((g) => g.slug === clusterSlug);
-        if (matched) setActiveGroup(matched.id);
+        if (matched) {
+          setActiveGroup(matched.id);
+          setShowClusters(true); // auto-reveal clusters if coming from a direct link
+        }
       }
     });
   }, []);
@@ -421,8 +427,8 @@ const Gallery = () => {
             />
           )}
 
-          {/* Group filter tabs */}
-          {!loading && groupsWithMedia.length > 0 && (
+          {/* Group filter tabs — hidden by default, shown when showClusters is true */}
+          {!loading && groupsWithMedia.length > 0 && showClusters && (
             <div className="flex gap-2 flex-wrap justify-center mb-10">
               <button
                 onClick={() => setActiveGroup("all")}
@@ -459,15 +465,32 @@ const Gallery = () => {
           )}
 
           {filteredMedia.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 pb-16">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 pb-8">
               {filteredMedia.map((item) => (
                 <MediaItem key={item.id} item={item} onClick={() => setSelectedMedia(item)} />
               ))}
             </div>
           )}
+
+          {/* Show / Hide clusters toggle button — always visible at the bottom */}
+          {!loading && groupsWithMedia.length > 0 && (
+            <div className="flex justify-center pt-6 pb-10">
+              <button
+                onClick={() => {
+                  setShowClusters((v) => !v);
+                  if (showClusters) {
+                    // Reset to "all" when hiding clusters
+                    setActiveGroup("all");
+                  }
+                }}
+                className="flex items-center gap-2 px-6 py-2.5 border gold-border rounded-full text-xs font-body tracking-wider uppercase gold-text opacity-60 hover:opacity-100 transition-all duration-300 cursor-none"
+              >
+                {showClusters ? "Hide All ←" : "Show All →"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
-
 
       {/* Lightbox */}
       {selectedMedia && (
