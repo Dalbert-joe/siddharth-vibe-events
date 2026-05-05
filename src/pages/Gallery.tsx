@@ -1,7 +1,28 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import Navigation from "@/components/Navigation";
+import { supabase } from "@/lib/supabase";
+
+interface GalleryMedia {
+  id: string;
+  file_name: string;
+  public_url: string;
+  mime_type: string;
+  caption: string | null;
+  group_id: string | null;
+  created_at: string;
+}
+
+interface GalleryGroup {
+  id: string;
+  name: string;
+  slug: string;
+  sort_order: number;
+}
+
 const Gallery = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, isAdmin } = useAuth();
 
   const [media, setMedia] = useState<GalleryMedia[]>([]);
   const [groups, setGroups] = useState<GalleryGroup[]>([]);
@@ -9,7 +30,7 @@ const Gallery = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // CRITICAL: hidden by default
+  // MUST be false initially
   const [showClusters, setShowClusters] = useState(false);
 
   const loadGroups = async () => {
@@ -36,13 +57,12 @@ const Gallery = () => {
       setGroups(groupsData);
       setLoading(false);
 
-      // URL filter ONLY — DO NOT SHOW CLUSTERS
+      // URL filter ONLY — do NOT show clusters
       const clusterSlug = searchParams.get("cluster");
       if (clusterSlug) {
         const matched = groupsData.find((g) => g.slug === clusterSlug);
         if (matched) {
           setActiveGroup(matched.id);
-          // ❌ REMOVED: setShowClusters(true)
         }
       }
     });
@@ -56,24 +76,26 @@ const Gallery = () => {
   const groupsWithMedia = groups.filter((g) => g.slug !== "general");
 
   return (
-    <div className="min-h-screen bg-background cursor-none">
+    <div className="min-h-screen bg-background">
       <Navigation />
 
-      <div className="pt-24 pb-8 px-6">
+      <div className="pt-24 pb-10 px-6">
         <div className="max-w-6xl mx-auto">
 
-          <h1 className="text-5xl text-center mb-6 gold-text">Gallery</h1>
+          <h1 className="text-5xl text-center mb-8">Gallery</h1>
 
-          {/* ✅ CLUSTERS — STRICT VISIBILITY */}
+          {/* CLUSTERS (STRICTLY CONTROLLED) */}
           {!loading && showClusters && groupsWithMedia.length > 0 && (
             <div className="flex flex-wrap justify-center gap-2 mb-10">
-              
               <button onClick={() => setActiveGroup("all")}>
                 All ({media.length})
               </button>
 
               {groupsWithMedia.map((g) => (
-                <button key={g.id} onClick={() => setActiveGroup(g.id)}>
+                <button
+                  key={g.id}
+                  onClick={() => setActiveGroup(g.id)}
+                >
                   {g.name} ({media.filter((m) => m.group_id === g.id).length})
                 </button>
               ))}
@@ -82,23 +104,17 @@ const Gallery = () => {
 
           {/* LOADING */}
           {loading && (
-            <div className="flex justify-center py-32">
-              <div className="w-10 h-10 border-2 border-gold border-t-transparent animate-spin rounded-full" />
-            </div>
+            <div className="text-center py-20">Loading...</div>
           )}
 
           {/* ERROR */}
           {error && (
-            <div className="text-center py-20 text-muted-foreground">
-              {error}
-            </div>
+            <div className="text-center py-20 text-red-500">{error}</div>
           )}
 
           {/* EMPTY */}
           {!loading && filteredMedia.length === 0 && (
-            <div className="text-center py-20 text-muted-foreground">
-              No media
-            </div>
+            <div className="text-center py-20">No media</div>
           )}
 
           {/* GRID */}
@@ -108,25 +124,26 @@ const Gallery = () => {
                 <img
                   key={item.id}
                   src={item.public_url}
+                  alt=""
                   className="w-full h-full object-cover"
                 />
               ))}
             </div>
           )}
 
-          {/* ✅ TOGGLE BUTTON */}
+          {/* TOGGLE BUTTON */}
           {!loading && groupsWithMedia.length > 0 && (
-            <div className="flex justify-center pt-8 pb-10">
+            <div className="flex justify-center pt-8">
               <button
                 onClick={() => {
                   if (showClusters) {
                     setShowClusters(false);
-                    setActiveGroup("all"); // reset
+                    setActiveGroup("all"); // reset filter
                   } else {
                     setShowClusters(true);
                   }
                 }}
-                className="px-6 py-2 border rounded-full"
+                className="px-6 py-2 border rounded"
               >
                 {showClusters ? "Hide All" : "Show All"}
               </button>
@@ -138,3 +155,5 @@ const Gallery = () => {
     </div>
   );
 };
+
+export default Gallery;
