@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -21,7 +21,6 @@ interface GalleryGroup {
 }
 
 const Gallery = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const [media, setMedia] = useState<GalleryMedia[]>([]);
@@ -30,23 +29,6 @@ const Gallery = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showClusters, setShowClusters] = useState(false);
-
-  // Track per-image failure
-  const [imgErrorMap, setImgErrorMap] = useState<Record<string, boolean>>({});
-
-  // 🔒 SAFE URL BUILDER
-  const getSafeUrl = (url: string) => {
-    if (!url) return "";
-
-    if (url.startsWith("http")) return url;
-
-    const { data } = supabase
-      .storage
-      .from("gallery") // ⚠️ ENSURE this matches your bucket name
-      .getPublicUrl(url);
-
-    return data.publicUrl;
-  };
 
   const loadGroups = async () => {
     const { data } = await supabase
@@ -132,42 +114,32 @@ const Gallery = () => {
           {/* GRID */}
           {filteredMedia.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredMedia.map((item) => {
-                const safeUrl = getSafeUrl(item.public_url);
-                const failed = imgErrorMap[item.id];
-
-                return (
-                  <div
-                    key={item.id}
-                    className="w-full aspect-[5/7] bg-black flex items-center justify-center overflow-hidden border"
-                  >
-                    {failed || !safeUrl ? (
-                      <span className="text-xs text-gray-400">
-                        Media unavailable
-                      </span>
-                    ) : (
-                      <img
-                        src={safeUrl}
-                        alt={item.file_name || "media"}
-                        crossOrigin="anonymous"
-                        referrerPolicy="no-referrer"
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                        onError={() =>
-                          setImgErrorMap((prev) => ({
-                            ...prev,
-                            [item.id]: true,
-                          }))
-                        }
-                      />
-                    )}
-                  </div>
-                );
-              })}
+              {filteredMedia.map((item) => (
+                <div
+                  key={item.id}
+                  className="w-full aspect-[5/7] bg-black overflow-hidden flex items-center justify-center"
+                >
+                  {item.mime_type?.startsWith("video/") ? (
+                    <video
+                      src={item.public_url}
+                      className="w-full h-full object-cover"
+                      controls
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={item.public_url}
+                      alt={item.file_name || "media"}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  )}
+                </div>
+              ))}
             </div>
           )}
 
-          {/* TOGGLE */}
+          {/* TOGGLE BUTTON */}
           {!loading && groupsWithMedia.length > 0 && (
             <div className="flex justify-center pt-8">
               <button
